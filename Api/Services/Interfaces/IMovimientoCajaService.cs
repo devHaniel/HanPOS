@@ -1,33 +1,28 @@
-using System;
+using Api.DTOs.MovimientoCaja;
 using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
-using Api.Models.Entities;
 
 namespace Api.Services.Interfaces
 {
     public interface IMovimientoCajaService
     {
         // Obtener todos los movimientos
-        Task<IReadOnlyList<MovimientoCaja>> GetAllAsync(
-            CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<MovimientoCajaResponseDto>> GetAllAsync(CancellationToken cancellationToken = default);
+
+        // Obtener movimiento por ID
+        Task<MovimientoCajaResponseDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
         // Obtener por caja
-        Task<IReadOnlyList<MovimientoCaja>> GetPorCajaAsync(
-            int cajaId,
-            CancellationToken cancellationToken = default);
-
-        // Obtener por id
-        Task<MovimientoCaja?> GetPorId(int id);
+        Task<IReadOnlyList<MovimientoCajaResponseDto>> GetPorCajaAsync(int cajaId, CancellationToken cancellationToken = default);
 
         // Agregar movimiento
-        Task<MovimientoCaja> AddAsync(
-            MovimientoCaja movimiento,
-            CancellationToken cancellationToken = default);
+        Task<MovimientoCajaResponseDto> CrearAsync(MovimientoCajaCrearRequest dto, CancellationToken cancellationToken = default);
+
+        // Actualizar movimiento
+        Task<MovimientoCajaResponseDto?> ActualizarAsync(MovimientoCajaActualizarRequest dto, CancellationToken cancellationToken = default);
 
         // Eliminar movimiento
-        Task RemoveAsync(
-            MovimientoCaja movimiento,
-            CancellationToken cancellationToken = default);
+        Task<bool> EliminarAsync(int id, CancellationToken cancellationToken = default);
     }
 }

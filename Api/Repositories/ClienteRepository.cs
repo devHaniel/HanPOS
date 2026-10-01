@@ -26,6 +26,14 @@ namespace Api.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<Cliente?> GetByIdAsync(
+            int id,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.Clientes
+                .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        }
+
         public async Task<Cliente?> GetWithVentasAsync(
             CancellationToken cancellationToken = default)
         {

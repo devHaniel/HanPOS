@@ -26,6 +26,14 @@ namespace Api.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<Proveedor?> GetByIdAsync(
+            int id,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.Proveedores
+                .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+        }
+
         public async Task<Proveedor?> GetWithComprasAsync(
             CancellationToken cancellationToken = default)
         {
@@ -47,7 +55,6 @@ namespace Api.Repositories
             CancellationToken cancellationToken = default)
         {
             _context.Proveedores.Add(proveedor);
-            await _context.SaveChangesAsync(cancellationToken);
             return proveedor;
         }
 
@@ -56,7 +63,6 @@ namespace Api.Repositories
             CancellationToken cancellationToken = default)
         {
             _context.Proveedores.Remove(proveedor);
-            await _context.SaveChangesAsync(cancellationToken);
         }
     }
 }

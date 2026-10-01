@@ -16,6 +16,17 @@ namespace Api.Repositories.Interfaces
         Task<IReadOnlyList<Venta>> GetAllAsync(
             CancellationToken cancellationToken = default);
 
+        // Obtener todas las ventas con paginación
+        Task<(List<Venta> Items, int Total)> GetAllPagedAsync(
+            int pagina,
+            int cantidad,
+            CancellationToken cancellationToken = default);
+
+        // Obtener venta por ID
+        Task<Venta?> GetByIdAsync(
+            int id,
+            CancellationToken cancellationToken = default);
+
         // Obtener venta con detalles y cliente
         Task<Venta?> GetWithDetailsAndClienteAsync(
             int ventaId,

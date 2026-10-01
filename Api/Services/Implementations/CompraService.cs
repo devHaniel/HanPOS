@@ -1,26 +1,29 @@
-using Api.Data;
-using Api.Models.Entities;
-using Api.Repositories.Interfaces;
-using Api.Services.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Api.DTOs.Compra;
+using Api.DTOs.DetalleCompra;
+using Api.DTOs.Paginacion;
+using Api.Models.Entities;
+using Api.Repositories.Interfaces;
+using Api.Services.Interfaces;
 
 namespace Api.Services.Implementations
 {
     public class CompraService : ICompraService
     {
         private readonly ICompraRepository _compraRepository;
-        private readonly IDetalleVentaRepository _detalleRepository;
+        private readonly IDetalleCompraRepository _detalleRepository;
         private readonly IProductoRepository _productoRepostory;
         private readonly IMovimientoCajaRepository _movimientoRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public CompraService(
-            ICompraRepository compraRepository, 
+            ICompraRepository compraRepository,
             IUnitOfWork unitOfWork,
-            IDetalleVentaRepository detalleRepository,
+            IDetalleCompraRepository detalleRepository,
             IProductoRepository productoRepository,
             IMovimientoCajaRepository movimientoCajaRepository)
         {
@@ -29,57 +32,128 @@ namespace Api.Services.Implementations
             _detalleRepository = detalleRepository;
             _productoRepostory = productoRepository;
             _movimientoRepository = movimientoCajaRepository;
-
         }
 
-        public async Task<IReadOnlyList<Compra>> GetAllAsync(CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<CompraResponseDto>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            return await _compraRepository.GetAllAsync(cancellationToken);
+            var compras = await _compraRepository.GetAllAsync(cancellationToken);
+            return compras.Select(MapToDTO).ToList().AsReadOnly();
         }
 
-        public async Task<Compra?> GetWithDetailsAndProveedorAsync(int compraId, CancellationToken cancellationToken = default)
+        public async Task<PagedResult<CompraResponseDto>> GetAllPagedAsync(int pagina = 1, int cantidad = 10, CancellationToken cancellationToken = default)
         {
-            return await _compraRepository.GetWithDetailsAndProveedorAsync(compraId, cancellationToken);
+            var (items, total) = await _compraRepository.GetAllPagedAsync(pagina, cantidad, cancellationToken);
+            return new PagedResult<CompraResponseDto>
+            {
+                Items = items.Select(MapToDTO).ToList(),
+                Pagina = pagina,
+                Cantidad = cantidad,
+                Total = total
+            };
         }
 
-        public async Task<IReadOnlyList<Compra>> GetPorFechaAsync(DateTime fecha, CancellationToken cancellationToken = default)
+        public async Task<CompraResponseDto?> GetByIdAsync(int compraId, CancellationToken cancellationToken = default)
+        {
+            var compra = await _compraRepository.GetWithDetailsAndProveedorAsync(compraId, cancellationToken);
+            return compra != null ? MapToDTO(compra) : null;
+        }
+
+        public async Task<IReadOnlyList<CompraResponseDto>> GetPorFechaAsync(DateTime fecha, CancellationToken cancellationToken = default)
         {
             var all = await _compraRepository.GetAllAsync(cancellationToken);
-            return all.Where(c => c.Fecha.Date == fecha.Date).ToList().AsReadOnly();
+            return all.Where(c => c.Fecha.Date == fecha.Date).Select(MapToDTO).ToList().AsReadOnly();
         }
 
-        public async Task<IReadOnlyList<Compra>> GetPorProveedorAsync(int proveedorId, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<CompraResponseDto>> GetPorProveedorAsync(int proveedorId, CancellationToken cancellationToken = default)
         {
             var all = await _compraRepository.GetAllAsync(cancellationToken);
-            return all.Where(c => c.ProveedorId == proveedorId).ToList().AsReadOnly();
+            return all.Where(c => c.ProveedorId == proveedorId).Select(MapToDTO).ToList().AsReadOnly();
         }
 
-        public async Task<Compra> CrearAsync(Compra compra, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<DetalleCompraResponseDto>> GetDetallesAsync(int compraId, CancellationToken cancellationToken = default)
         {
+            var detalles = await _detalleRepository.GetByCompraIdAsync(compraId, cancellationToken);
+            return detalles.Select(MapToDetalleDTO).ToList().AsReadOnly();
+        }
+
+        public async Task<CompraResponseDto> CrearAsync(CompraCrearRequest dto, CancellationToken cancellationToken = default)
+        {
+            // Mapear DTO a entidad
+            var compra = new Compra
+            {
+                Fecha = dto.Fecha,
+                Estado = (EstadoCompra)dto.Estado,
+                UsuarioId = dto.UsuarioId,
+                ProveedorId = dto.ProveedorId,
+                CajaId = dto.CajaId,
+                Detalles = new List<DetalleCompra>()
+            };
+
+            // Mapear detalles
+            if (dto.Detalles != null)
+            {
+                foreach (var d in dto.Detalles)
+                {
+                    compra.Detalles.Add(new DetalleCompra
+                    {
+                        ProductoId = d.ProductoId,
+                        Cantidad = d.Cantidad
+                    });
+                }
+            }
+
+            // Validar y procesar la compra
             await ValidarCompraAsync(compra, cancellationToken);
-
             await ProcesarDetallesAsync(compra, cancellationToken);
-
             CalcularTotales(compra);
 
             await _compraRepository.AddAsync(compra, cancellationToken);
-
             await RegistrarMovimientoCajaAsync(compra, cancellationToken);
-
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            return compra;
+
+            // Recargar con detalles para el DTO de respuesta
+            var compraCompleta = await _compraRepository.GetWithDetailsAndProveedorAsync(compra.Id, cancellationToken);
+            return MapToDTO(compraCompleta!);
         }
 
-        public async Task<bool> ActualizarAsync(Compra compra, CancellationToken cancellationToken = default)
+        public async Task<CompraResponseDto?> ActualizarAsync(CompraActualizarRequest dto, CancellationToken cancellationToken = default)
         {
-            var existente = await _compraRepository.GetWithDetailsAndProveedorAsync(compra.Id, cancellationToken);
-            if (existente == null) return false;
+            var existente = await _compraRepository.GetWithDetailsAndProveedorAsync(dto.Id, cancellationToken);
+            if (existente == null) return null;
 
-            existente.ProveedorId = compra.ProveedorId;
-            existente.Fecha = compra.Fecha;
-            existente.Total = compra.Total;
+            // Actualizar campos principales
+            existente.Fecha = dto.Fecha;
+            existente.Estado = (EstadoCompra)dto.Estado;
+            existente.UsuarioId = dto.UsuarioId;
+            existente.CajaId = dto.CajaId;
+            existente.ProveedorId = dto.ProveedorId;
+
+            // Actualizar detalles si se proporcionan
+            if (dto.Detalles != null)
+            {
+                // Eliminar detalles existentes
+                foreach (var detalle in existente.Detalles.ToList())
+                {
+                    await _detalleRepository.RemoveAsync(detalle, cancellationToken);
+                }
+
+                // Agregar nuevos detalles
+                foreach (var d in dto.Detalles)
+                {
+                    existente.Detalles.Add(new DetalleCompra
+                    {
+                        ProductoId = d.ProductoId,
+                        Cantidad = d.Cantidad
+                    });
+                }
+
+                // Recalcular totales
+                CalcularTotales(existente);
+            }
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            return true;
+
+            return MapToDTO(existente);
         }
 
         public async Task<bool> EliminarAsync(int id, CancellationToken cancellationToken = default)
@@ -92,9 +166,7 @@ namespace Api.Services.Implementations
             return true;
         }
 
-        private async Task ValidarCompraAsync(
-            Compra compra,
-            CancellationToken cancellationToken)
+        private async Task ValidarCompraAsync(Compra compra, CancellationToken cancellationToken)
         {
             if (compra.Detalles == null || !compra.Detalles.Any())
                 throw new Exception("La compra debe contener al menos un producto.");
@@ -104,25 +176,16 @@ namespace Api.Services.Implementations
 
             if (compra.Detalles.Any(x => x.ProductoId <= 0))
                 throw new Exception("La compra contiene un producto inválido.");
-
-            // Aquí después podrías validar:
-            // - Caja abierta
-            // - Usuario válido
-            // - Cliente válido
-            // - etc.
-
         }
 
         private async Task RegistrarMovimientoCajaAsync(Compra compra, CancellationToken cancellationToken)
         {
-            // Si la venta fue en efectivo esta tocando la caja
-            // por ende es un movimiento de caja
             var movimiento = new MovimientoCaja
             {
                 CajaId = compra.CajaId,
                 Monto = compra.Total,
                 Tipo = TipoMovimiento.Egreso,
-                Concepto = $"Compra"
+                Concepto = $"Compra #{compra.Id}"
             };
 
             await _movimientoRepository.AddAsync(movimiento, cancellationToken);
@@ -130,29 +193,16 @@ namespace Api.Services.Implementations
 
         private async Task ProcesarDetallesAsync(Compra compra, CancellationToken cancellationToken)
         {
-            
-            foreach(var detalle in compra.Detalles)
+            foreach (var detalle in compra.Detalles)
             {
-                var producto = await _productoRepostory
-                    .GetById(detalle.Id, cancellationToken);
+                var producto = await _productoRepostory.GetByIdAsync(detalle.ProductoId, cancellationToken);
 
                 if (producto == null)
-                    throw new Exception(
-                        $"El producto {detalle.ProductoId} no existe.");
-
-                if (producto.Stock < detalle.Cantidad)
-                    throw new Exception(
-                        $"Stock insuficiente para {producto.Nombre}.");
+                    throw new Exception($"El producto {detalle.ProductoId} no existe.");
 
                 detalle.PrecioUnitario = producto.PrecioCompra;
-
-                producto.Stock -= detalle.Cantidad;
-
+                producto.Stock += detalle.Cantidad; // En compra se suma al stock
             }
-
-            // productos
-            // stock
-            // crear/modificar detalles
         }
 
         private void CalcularTotales(Compra compra)
@@ -161,17 +211,42 @@ namespace Api.Services.Implementations
 
             foreach (var detalle in compra.Detalles)
             {
-                detalle.Subtotal =
-                    detalle.Cantidad * detalle.PrecioUnitario;
-
+                detalle.Subtotal = detalle.Cantidad * detalle.PrecioUnitario;
                 subtotal += detalle.Subtotal;
             }
 
             compra.Subtotal = subtotal;
-
             compra.Impuesto = subtotal * 0.15m;
-
             compra.Total = compra.Subtotal + compra.Impuesto;
+        }
+
+        private static CompraResponseDto MapToDTO(Compra compra)
+        {
+            return new CompraResponseDto
+            {
+                Id = compra.Id,
+                Fecha = compra.Fecha,
+                Subtotal = compra.Subtotal,
+                Impuesto = compra.Impuesto,
+                Total = compra.Total,
+                Estado = (int)compra.Estado,
+                UsuarioId = compra.UsuarioId,
+                CajaId = compra.CajaId,
+                ProveedorId = compra.ProveedorId
+            };
+        }
+
+        private static DetalleCompraResponseDto MapToDetalleDTO(DetalleCompra detalle)
+        {
+            return new DetalleCompraResponseDto
+            {
+                Id = detalle.Id,
+                CompraId = detalle.CompraId,
+                ProductoId = detalle.ProductoId,
+                Cantidad = detalle.Cantidad,
+                PrecioUnitario = detalle.PrecioUnitario,
+                Subtotal = detalle.Subtotal
+            };
         }
     }
 }

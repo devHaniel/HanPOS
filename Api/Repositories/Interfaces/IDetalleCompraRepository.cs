@@ -2,6 +2,7 @@ using Api.Models.Entities;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Api.Repositories.Interfaces
 {
@@ -15,9 +16,24 @@ namespace Api.Repositories.Interfaces
         Task<IReadOnlyList<DetalleCompra>> GetAllAsync(
             CancellationToken cancellationToken = default);
 
+        // Obtener detalle por ID
+        Task<DetalleCompra?> GetByIdAsync(
+            int id,
+            CancellationToken cancellationToken = default);
+
         // Obtener por compra
         Task<IReadOnlyList<DetalleCompra>> GetPorCompraAsync(
             int compraId,
+            CancellationToken cancellationToken = default);
+
+        // Obtener por compra (alias)
+        Task<IReadOnlyList<DetalleCompra>> GetByCompraIdAsync(
+            int compraId,
+            CancellationToken cancellationToken = default);
+
+        // Obtener por producto
+        Task<IReadOnlyList<DetalleCompra>> GetByProductoIdAsync(
+            int productoId,
             CancellationToken cancellationToken = default);
 
         // Agregar detalle de compra

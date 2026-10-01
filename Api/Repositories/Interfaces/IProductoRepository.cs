@@ -16,16 +16,21 @@ namespace Api.Repositories.Interfaces
         Task<IReadOnlyList<Producto>> GetActivosAsync(
             CancellationToken cancellationToken = default);
 
-        // Obtener por código
-        Task<Producto?> GetById(
+        // Obtener todos los productos activos con paginación
+        Task<(List<Producto> Items, int Total)> GetActivosPagedAsync(
+            int pagina,
+            int cantidad,
+            CancellationToken cancellationToken = default);
+
+        // Obtener producto por ID
+        Task<Producto?> GetByIdAsync(
             int id,
             CancellationToken cancellationToken = default);
 
-        Task<Producto?> GetByCodigo(
+        // Obtener por código
+        Task<Producto?> GetByCodigoAsync(
             string codigo,
             CancellationToken cancellationToken = default);
-
-
 
         // Obtener por categoría
         Task<IReadOnlyList<Producto>> GetPorCategoriaAsync(

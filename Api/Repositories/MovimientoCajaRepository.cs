@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Api.Repositories
 {
@@ -25,6 +26,14 @@ namespace Api.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<MovimientoCaja?> GetByIdAsync(
+            int id,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.MovimientosCaja
+                .FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
+        }
+
         public async Task<IReadOnlyList<MovimientoCaja>> GetPorCajaAsync(
             int cajaId,
             CancellationToken cancellationToken = default)
@@ -39,7 +48,6 @@ namespace Api.Repositories
             CancellationToken cancellationToken = default)
         {
             _context.MovimientosCaja.Add(movimiento);
-            await _context.SaveChangesAsync(cancellationToken);
             return movimiento;
         }
 
@@ -48,13 +56,6 @@ namespace Api.Repositories
             CancellationToken cancellationToken = default)
         {
             _context.MovimientosCaja.Remove(movimiento);
-            await _context.SaveChangesAsync(cancellationToken);
-        }
-
-        public async Task<MovimientoCaja?> GetPorId(int id)
-        {
-            return await _context.MovimientosCaja
-                .FirstOrDefaultAsync(m => m.Id == id);
         }
     }
 }

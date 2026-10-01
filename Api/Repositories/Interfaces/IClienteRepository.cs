@@ -16,6 +16,11 @@ namespace Api.Repositories.Interfaces
         Task<IReadOnlyList<Cliente>> GetAllAsync(
             CancellationToken cancellationToken = default);
 
+        // Obtener cliente por ID
+        Task<Cliente?> GetByIdAsync(
+            int id,
+            CancellationToken cancellationToken = default);
+
         // Obtener con sus ventas
         Task<Cliente?> GetWithVentasAsync(
             CancellationToken cancellationToken = default);

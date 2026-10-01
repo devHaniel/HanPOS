@@ -16,14 +16,14 @@ namespace Api.Repositories.Interfaces
         Task<IReadOnlyList<Categoria>> GetActivasAsync(
             CancellationToken cancellationToken = default);
 
+        // Obtener categoría por ID
+        Task<Categoria?> GetByIdAsync(
+            int id,
+            CancellationToken cancellationToken = default);
+
         // Obtener con sus productos
         Task<Categoria?> GetWithProductosAsync(
             CancellationToken cancellationToken = default);
-        
-        Task<Categoria?> GetById(
-            int id,
-            CancellationToken cancellationToken
-        );
 
         // Agregar categoría
         Task<Categoria> AddAsync(

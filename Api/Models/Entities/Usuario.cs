@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
 
 namespace Api.Models.Entities
 {
@@ -10,15 +11,9 @@ namespace Api.Models.Entities
         int Id { get; set; }
     }
 
-    public class Usuario : IEntity
+    public class Usuario : IdentityUser<int> 
     {
-        public int Id { get; set; }
-
         public string Nombre { get; set; } = null!;
-
-        public string Username { get; set; } = null!;
-
-        public string PasswordHash { get; set; } = null!;
 
         public bool Activo { get; set; } = true;
 

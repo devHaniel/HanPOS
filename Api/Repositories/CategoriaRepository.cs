@@ -27,6 +27,14 @@ namespace Api.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<Categoria?> GetByIdAsync(
+            int id,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.Categorias
+                .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        }
+
         public async Task<Categoria?> GetWithProductosAsync(
             CancellationToken cancellationToken = default)
         {
@@ -48,11 +56,6 @@ namespace Api.Repositories
             CancellationToken cancellationToken = default)
         {
             _context.Categorias.Remove(categoria);
-        }
-
-        public Task<Categoria?> GetById(int id, CancellationToken cancellationToken)
-        {
-            return _context.Categorias.FirstOrDefaultAsync(c => c.Id == id);
         }
     }
 }

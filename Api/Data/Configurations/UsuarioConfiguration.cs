@@ -16,7 +16,7 @@ namespace Api.Data.Configurations
                 .IsRequired()
                 .HasMaxLength(100);
 
-            builder.Property(u => u.Username)
+            builder.Property(u => u.UserName)
                 .IsRequired()
                 .HasMaxLength(50)
                 .IsUnicode(false);
@@ -29,7 +29,7 @@ namespace Api.Data.Configurations
                 .IsRequired();
 
             // Indices
-            builder.HasIndex(u => u.Username)
+            builder.HasIndex(u => u.UserName)
                 .IsUnique();
 
             // Relationships

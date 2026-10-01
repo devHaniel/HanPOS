@@ -1,7 +1,8 @@
-using Api.Models.Entities;
+using Api.DTOs.Proveedor;
+using Api.DTOs.Compra;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Api.Services.Interfaces
 {
@@ -12,19 +13,22 @@ namespace Api.Services.Interfaces
     public interface IProveedorService
     {
         // Obtener todos los proveedores
-        Task<IReadOnlyList<Proveedor>> GetAllAsync(CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<ProveedorResponseDto>> GetAllAsync(CancellationToken cancellationToken = default);
 
-        // Obtener con sus compras
-        Task<Proveedor?> GetWithComprasAsync(CancellationToken cancellationToken = default);
+        // Obtener proveedor por ID
+        Task<ProveedorResponseDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
         // Obtener por RTN
-        Task<Proveedor?> GetByRtnAsync(string rtn, CancellationToken cancellationToken = default);
+        Task<ProveedorResponseDto?> GetByRtnAsync(string rtn, CancellationToken cancellationToken = default);
+
+        // Obtener compras de un proveedor
+        Task<IReadOnlyList<CompraResponseDto>> GetComprasAsync(int proveedorId, CancellationToken cancellationToken = default);
 
         // Crear proveedor
-        Task<Proveedor> CrearAsync(Proveedor proveedor, CancellationToken cancellationToken = default);
+        Task<ProveedorResponseDto> CrearAsync(ProveedorCrearRequest dto, CancellationToken cancellationToken = default);
 
         // Actualizar proveedor
-        Task<bool> ActualizarAsync(Proveedor proveedor, CancellationToken cancellationToken = default);
+        Task<ProveedorResponseDto?> ActualizarAsync(ProveedorActualizarRequest dto, CancellationToken cancellationToken = default);
 
         // Eliminar proveedor
         Task<bool> EliminarAsync(int id, CancellationToken cancellationToken = default);

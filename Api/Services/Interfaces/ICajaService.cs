@@ -1,7 +1,8 @@
-using Api.Models.Entities;
+using Api.DTOs.Caja;
+using Api.DTOs.Paginacion;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Api.Services.Interfaces
 {
@@ -12,18 +13,30 @@ namespace Api.Services.Interfaces
     public interface ICajaService
     {
         // Obtener todas las cajas
-        Task<IReadOnlyList<Caja>> GetAllAsync(CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<CajaResponseDto>> GetAllAsync(CancellationToken cancellationToken = default);
+
+        // Obtener todas las cajas con paginación
+        Task<PagedResult<CajaResponseDto>> GetAllPagedAsync(int pagina = 1, int cantidad = 10, CancellationToken cancellationToken = default);
+
+        // Obtener caja por ID
+        Task<CajaResponseDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
         // Obtener caja abierta actual
-        Task<Caja?> GetAbiertaAsync(CancellationToken cancellationToken = default);
+        Task<CajaResponseDto?> GetAbiertaAsync(CancellationToken cancellationToken = default);
 
         // Crear nueva caja
-        Task<Caja> CrearAsync(Caja caja, CancellationToken cancellationToken = default);
+        Task<CajaResponseDto> CrearAsync(CajaCrearRequest dto, CancellationToken cancellationToken = default);
 
         // Cerrar caja
-        Task<Caja?> CerrarAsync(int id, decimal montoFinal, CancellationToken cancellationToken = default);
+        Task<CajaResponseDto?> CerrarAsync(int id, CancellationToken cancellationToken = default);
+
+        // Actualizar caja
+        Task<CajaResponseDto?> ActualizarAsync(CajaActualizarRequest dto, CancellationToken cancellationToken = default);
 
         // Eliminar caja
         Task<bool> EliminarAsync(int id, CancellationToken cancellationToken = default);
+
+        // Obtener movimientos de una caja
+        Task<IReadOnlyList<Api.DTOs.MovimientoCaja.MovimientoCajaResponseDto>> GetMovimientosAsync(int cajaId, CancellationToken cancellationToken = default);
     }
 }

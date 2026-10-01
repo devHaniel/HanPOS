@@ -1,7 +1,8 @@
-using Api.Models.Entities;
+using Api.DTOs.Categoria;
+using Api.DTOs.Producto;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Api.Services.Interfaces
 {
@@ -12,15 +13,21 @@ namespace Api.Services.Interfaces
     public interface ICategoriaService
     {
         // Obtener todas las categorías activas
-        Task<IReadOnlyList<Categoria>> GetActivasAsync(CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<CategoriaResponseDto>> GetActivasAsync(CancellationToken cancellationToken = default);
+
+        // Obtener categoría por ID
+        Task<CategoriaResponseDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+
+        // Obtener productos de una categoría
+        Task<IReadOnlyList<ProductoResponseDto>> GetProductosAsync(int categoriaId, CancellationToken cancellationToken = default);
 
         // Crear categoría
-        Task<Categoria> CrearAsync(Categoria categoria, CancellationToken cancellationToken = default);
+        Task<CategoriaResponseDto> CrearAsync(CategoriaCrearRequest dto, CancellationToken cancellationToken = default);
 
         // Actualizar categoría
-        Task<bool> ActualizarAsync(Categoria categoria, CancellationToken cancellationToken = default);
+        Task<CategoriaResponseDto?> ActualizarAsync(CategoriaActualizarRequest dto, CancellationToken cancellationToken = default);
 
-        // Eliminar categoría
+        // Eliminar categoría (soft delete)
         Task<bool> EliminarAsync(int id, CancellationToken cancellationToken = default);
     }
 }

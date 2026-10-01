@@ -1,14 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Api.DTOs.MovimientoCaja;
 using Api.Models.Entities;
 using Api.Repositories.Interfaces;
 using Api.Services.Interfaces;
 
 namespace Api.Services.Implementations
 {
-    public class MovimientoCajaService: IMovimientoCajaService
+    public class MovimientoCajaService : IMovimientoCajaService
     {
         private readonly IMovimientoCajaRepository _repository;
         private readonly IUnitOfWork _unitOfWork;
@@ -19,41 +21,78 @@ namespace Api.Services.Implementations
             _unitOfWork = unitOfWork;
         }
 
-        public Task<MovimientoCaja> AddAsync(MovimientoCaja movimiento, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<MovimientoCajaResponseDto>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            var result = await _repository.GetAllAsync(cancellationToken);
+            return result.Select(MapToDTO).ToList().AsReadOnly();
         }
 
-        public async Task<IReadOnlyList<MovimientoCaja>> GetAllAsync(CancellationToken cancellationToken = default)
+        public async Task<MovimientoCajaResponseDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            var result = await _repository.GetAllAsync();
-
-            return result;
+            var movimiento = await _repository.GetByIdAsync(id);
+            return movimiento != null ? MapToDTO(movimiento) : null;
         }
 
-        public async Task<IReadOnlyList<MovimientoCaja>> GetPorCajaAsync(int cajaId, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<MovimientoCajaResponseDto>> GetPorCajaAsync(int cajaId, CancellationToken cancellationToken = default)
         {
             var result = await _repository.GetPorCajaAsync(cajaId);
-
-            return result;
+            return result.Select(MapToDTO).ToList().AsReadOnly();
         }
 
-        public async Task<MovimientoCaja?> GetPorId(int id)
+        public async Task<MovimientoCajaResponseDto> CrearAsync(MovimientoCajaCrearRequest dto, CancellationToken cancellationToken = default)
         {
-            return await _repository.GetPorId(id);
+            var movimiento = new MovimientoCaja
+            {
+                Monto = dto.Monto,
+                Tipo = (TipoMovimiento)dto.TipoMovimiento,
+                Concepto = dto.Concepto,
+                Fecha = dto.Fecha,
+                CajaId = dto.CajaId
+            };
+
+            await _repository.AddAsync(movimiento, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return MapToDTO(movimiento);
         }
 
-        public async Task RemoveAsync(MovimientoCaja movimiento, CancellationToken cancellationToken = default)
+        public async Task<MovimientoCajaResponseDto?> ActualizarAsync(MovimientoCajaActualizarRequest dto, CancellationToken cancellationToken = default)
         {
-            if(movimiento == null)
-                throw new ArgumentNullException("Movimiento no pasado.");
-            var buscarMovimiento = await _repository.GetPorId(movimiento.Id);
+            var existente = await _repository.GetByIdAsync(dto.Id);
+            if (existente == null) return null;
 
-            if(buscarMovimiento == null)
-                throw new ArgumentException("Movimiento no encontrado.");
+            existente.Monto = dto.Monto;
+            existente.Tipo = (TipoMovimiento)dto.TipoMovimiento;
+            existente.Concepto = dto.Concepto;
+            existente.Fecha = dto.Fecha;
+            existente.CajaId = dto.CajaId;
 
-            await _repository.RemoveAsync(movimiento);
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return MapToDTO(existente);
+        }
+
+        public async Task<bool> EliminarAsync(int id, CancellationToken cancellationToken = default)
+        {
+            var movimiento = await _repository.GetByIdAsync(id);
+            if (movimiento == null) return false;
+
+            await _repository.RemoveAsync(movimiento, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+
+        private static MovimientoCajaResponseDto MapToDTO(MovimientoCaja movimiento)
+        {
+            return new MovimientoCajaResponseDto
+            {
+                Id = movimiento.Id,
+                Monto = movimiento.Monto,
+                TipoMovimiento = (int)movimiento.Tipo,
+                Concepto = movimiento.Concepto,
+                Fecha = movimiento.Fecha,
+                CajaId = movimiento.CajaId
+            };
         }
     }
 }

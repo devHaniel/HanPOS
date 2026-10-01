@@ -1,4 +1,5 @@
-using Api.Data;
+using Api.DTOs.Cliente;
+using Api.DTOs.Venta;
 using Api.Models.Entities;
 using Api.Repositories.Interfaces;
 using Api.Services.Interfaces;
@@ -12,59 +13,105 @@ namespace Api.Services.Implementations
     public class ClienteService : IClienteService
     {
         private readonly IClienteRepository _clienteRepository;
+        private readonly IVentaRepository _ventaRepository;
         private readonly IUnitOfWork _unitOfWork;
 
-        public ClienteService(IClienteRepository clienteRepository, IUnitOfWork unitOfWork)
+        public ClienteService(IClienteRepository clienteRepository, IVentaRepository ventaRepository, IUnitOfWork unitOfWork)
         {
             _clienteRepository = clienteRepository;
+            _ventaRepository = ventaRepository;
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<IReadOnlyList<Cliente>> GetAllAsync(CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<ClienteResponseDto>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            return await _clienteRepository.GetAllAsync(cancellationToken);
+            var clientes = await _clienteRepository.GetAllAsync(cancellationToken);
+            return clientes.Select(MapToDTO).ToList().AsReadOnly();
         }
 
-        public async Task<Cliente?> GetWithVentasAsync(CancellationToken cancellationToken = default)
+        public async Task<ClienteResponseDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            return await _clienteRepository.GetWithVentasAsync(cancellationToken);
+            var cliente = await _clienteRepository.GetByIdAsync(id, cancellationToken);
+            return cliente != null ? MapToDTO(cliente) : null;
         }
 
-        public async Task<Cliente?> GetByRtnAsync(string rtn, CancellationToken cancellationToken = default)
+        public async Task<ClienteResponseDto?> GetByRtnAsync(string rtn, CancellationToken cancellationToken = default)
         {
-            return await _clienteRepository.GetByRtnAsync(rtn, cancellationToken);
+            var cliente = await _clienteRepository.GetByRtnAsync(rtn, cancellationToken);
+            return cliente != null ? MapToDTO(cliente) : null;
         }
 
-        public async Task<Cliente> CrearAsync(Cliente cliente, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<VentaResponseDto>> GetVentasAsync(int clienteId, CancellationToken cancellationToken = default)
         {
+            var all = await _ventaRepository.GetAllAsync(cancellationToken);
+            return all.Where(v => v.ClienteId == clienteId).Select(MapToVentaDTO).ToList().AsReadOnly();
+        }
+
+        public async Task<ClienteResponseDto> CrearAsync(ClienteCrearRequest dto, CancellationToken cancellationToken = default)
+        {
+            var cliente = new Cliente
+            {
+                Nombre = dto.Nombre,
+                Telefono = dto.Telefono,
+                RTN = dto.RTN
+            };
+
             await _clienteRepository.AddAsync(cliente, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            return cliente;
+
+            return MapToDTO(cliente);
         }
 
-        public async Task<bool> ActualizarAsync(Cliente cliente, CancellationToken cancellationToken = default)
+        public async Task<ClienteResponseDto?> ActualizarAsync(ClienteActualizarRequest dto, CancellationToken cancellationToken = default)
         {
-            var existente = await _clienteRepository.GetAllAsync(cancellationToken);
-            if (existente == null || existente.Count == 0) return false;
+            var existente = await _clienteRepository.GetByIdAsync(dto.Id, cancellationToken);
+            if (existente == null) return null;
 
-            var first = existente.First(c => c.Id != cliente.Id);
-            // Actualizar campos simples - en un caso real haríamos un mapeo proper
-            first.Nombre = cliente.Nombre;
-            first.RTN = cliente.RTN;
-            first.Telefono = cliente.Telefono;
+            existente.Nombre = dto.Nombre;
+            existente.Telefono = dto.Telefono;
+            existente.RTN = dto.RTN;
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            return true;
+
+            return MapToDTO(existente);
         }
 
         public async Task<bool> EliminarAsync(int id, CancellationToken cancellationToken = default)
         {
-            var cliente = await _clienteRepository.GetAllAsync(cancellationToken);
-            var eliminar = cliente.FirstOrDefault(c => c.Id == id);
-            if (eliminar == null) return false;
+            var cliente = await _clienteRepository.GetByIdAsync(id, cancellationToken);
+            if (cliente == null) return false;
 
-            await _clienteRepository.RemoveAsync(eliminar, cancellationToken);
+            await _clienteRepository.RemoveAsync(cliente, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return true;
+        }
+
+        private static ClienteResponseDto MapToDTO(Cliente cliente)
+        {
+            return new ClienteResponseDto
+            {
+                Id = cliente.Id,
+                Nombre = cliente.Nombre,
+                Telefono = cliente.Telefono,
+                RTN = cliente.RTN
+            };
+        }
+
+        private static VentaResponseDto MapToVentaDTO(Venta venta)
+        {
+            return new VentaResponseDto
+            {
+                Id = venta.Id,
+                Fecha = venta.Fecha,
+                Subtotal = venta.Subtotal,
+                Impuesto = venta.Impuesto,
+                Total = venta.Total,
+                MetodoPago = (int?)venta.MetodoPago,
+                Estado = (int?)venta.Estado,
+                UsuarioId = venta.UsuarioId,
+                CajaId = venta.CajaId,
+                ClienteId = venta.ClienteId
+            };
         }
     }
 }

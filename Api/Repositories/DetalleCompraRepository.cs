@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Api.Repositories
 {
@@ -25,6 +26,14 @@ namespace Api.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<DetalleCompra?> GetByIdAsync(
+            int id,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.DetallesCompra
+                .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
+        }
+
         public async Task<IReadOnlyList<DetalleCompra>> GetPorCompraAsync(
             int compraId,
             CancellationToken cancellationToken = default)
@@ -34,12 +43,27 @@ namespace Api.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<IReadOnlyList<DetalleCompra>> GetByCompraIdAsync(
+            int compraId,
+            CancellationToken cancellationToken = default)
+        {
+            return await GetPorCompraAsync(compraId, cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<DetalleCompra>> GetByProductoIdAsync(
+            int productoId,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.DetallesCompra
+                .Where(d => d.ProductoId == productoId)
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<DetalleCompra> AddAsync(
             DetalleCompra detalle,
             CancellationToken cancellationToken = default)
         {
             _context.DetallesCompra.Add(detalle);
-            await _context.SaveChangesAsync(cancellationToken);
             return detalle;
         }
 
@@ -48,7 +72,6 @@ namespace Api.Repositories
             CancellationToken cancellationToken = default)
         {
             _context.DetallesCompra.Remove(detalle);
-            await _context.SaveChangesAsync(cancellationToken);
         }
     }
 }

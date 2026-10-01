@@ -1,7 +1,8 @@
-using Api.Models.Entities;
+using Api.DTOs.Producto;
+using Api.DTOs.Paginacion;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Api.Services.Interfaces
 {
@@ -12,15 +13,30 @@ namespace Api.Services.Interfaces
     public interface IProductoService
     {
         // Obtener todos los productos activos
-        Task<IReadOnlyList<Producto>> GetActivosAsync(CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<ProductoResponseDto>> GetActivosAsync(CancellationToken cancellationToken = default);
+
+        // Obtener todos los productos activos con paginación
+        Task<PagedResult<ProductoResponseDto>> GetActivosPagedAsync(int pagina = 1, int cantidad = 10, CancellationToken cancellationToken = default);
+
+        // Obtener producto por ID
+        Task<ProductoResponseDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+
+        // Obtener producto por código
+        Task<ProductoResponseDto?> GetByCodigoAsync(string codigo, CancellationToken cancellationToken = default);
+
+        // Obtener ventas de un producto
+        Task<IReadOnlyList<Api.DTOs.DetalleVenta.DetalleVentaResponseDto>> GetVentasAsync(int productoId, CancellationToken cancellationToken = default);
+
+        // Obtener compras de un producto
+        Task<IReadOnlyList<Api.DTOs.DetalleCompra.DetalleCompraResponseDto>> GetComprasAsync(int productoId, CancellationToken cancellationToken = default);
 
         // Crear producto
-        Task<Producto> CrearAsync(Producto producto, CancellationToken cancellationToken = default);
+        Task<ProductoResponseDto> CrearAsync(ProductoCrearRequest dto, CancellationToken cancellationToken = default);
 
         // Actualizar producto
-        Task<bool> ActualizarAsync(Producto producto, CancellationToken cancellationToken = default);
+        Task<ProductoResponseDto?> ActualizarAsync(ProductoActualizarRequest dto, CancellationToken cancellationToken = default);
 
-        // Eliminar producto
+        // Eliminar producto (soft delete)
         Task<bool> EliminarAsync(int id, CancellationToken cancellationToken = default);
     }
 }

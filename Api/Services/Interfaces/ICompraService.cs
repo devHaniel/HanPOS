@@ -1,7 +1,9 @@
-using Api.Models.Entities;
+using Api.DTOs.Compra;
+using Api.DTOs.DetalleCompra;
+using Api.DTOs.Paginacion;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Api.Services.Interfaces
 {
@@ -12,22 +14,28 @@ namespace Api.Services.Interfaces
     public interface ICompraService
     {
         // Obtener todas las compras
-        Task<IReadOnlyList<Compra>> GetAllAsync(CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<CompraResponseDto>> GetAllAsync(CancellationToken cancellationToken = default);
 
-        // Obtener compra con detalles y proveedor
-        Task<Compra?> GetWithDetailsAndProveedorAsync(int compraId, CancellationToken cancellationToken = default);
+        // Obtener todas las compras con paginación
+        Task<PagedResult<CompraResponseDto>> GetAllPagedAsync(int pagina = 1, int cantidad = 10, CancellationToken cancellationToken = default);
+
+        // Obtener compra por ID
+        Task<CompraResponseDto?> GetByIdAsync(int compraId, CancellationToken cancellationToken = default);
 
         // Obtener compras por fecha
-        Task<IReadOnlyList<Compra>> GetPorFechaAsync(DateTime fecha, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<CompraResponseDto>> GetPorFechaAsync(DateTime fecha, CancellationToken cancellationToken = default);
 
         // Obtener compras por proveedor
-        Task<IReadOnlyList<Compra>> GetPorProveedorAsync(int proveedorId, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<CompraResponseDto>> GetPorProveedorAsync(int proveedorId, CancellationToken cancellationToken = default);
+
+        // Obtener detalles de una compra
+        Task<IReadOnlyList<DetalleCompraResponseDto>> GetDetallesAsync(int compraId, CancellationToken cancellationToken = default);
 
         // Crear compra
-        Task<Compra> CrearAsync(Compra compra, CancellationToken cancellationToken = default);
+        Task<CompraResponseDto> CrearAsync(CompraCrearRequest dto, CancellationToken cancellationToken = default);
 
         // Actualizar compra
-        Task<bool> ActualizarAsync(Compra compra, CancellationToken cancellationToken = default);
+        Task<CompraResponseDto?> ActualizarAsync(CompraActualizarRequest dto, CancellationToken cancellationToken = default);
 
         // Eliminar compra
         Task<bool> EliminarAsync(int id, CancellationToken cancellationToken = default);

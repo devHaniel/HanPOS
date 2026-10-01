@@ -1,6 +1,7 @@
 using Api.Data;
 using Api.Models.Entities;
 using Api.Repositories.Interfaces;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,33 +23,56 @@ namespace Api.Repositories
         public async Task<IReadOnlyList<Usuario>> GetActivosAsync(
             CancellationToken cancellationToken = default)
         {
-            return await _context.Usuarios
+            return await _context.Users
                 .Where(u => u.Activo)
                 .ToListAsync(cancellationToken);
+        }
+
+        public async Task<Usuario?> GetByIdAsync(
+            int id,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.Users
+                .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
         }
 
         public async Task<Usuario?> GetByUsernameAsync(
             string username,
             CancellationToken cancellationToken = default)
         {
-            return await _context.Usuarios
-                .FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
+            return await _context.Users
+                .FirstOrDefaultAsync(u => u.UserName == username, cancellationToken);
+        }
+
+        public async Task<Usuario?> GetByEmailAsync(
+            string email,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.Users
+                .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
         }
 
         public async Task<bool> UsernameExistsAsync(
             string username,
             CancellationToken cancellationToken = default)
         {
-            return await _context.Usuarios
-                .AnyAsync(u => u.Username == username, cancellationToken);
+            return await _context.Users
+                .AnyAsync(u => u.UserName == username, cancellationToken);
+        }
+
+        public async Task<bool> EmailExistsAsync(
+            string email,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.Users
+                .AnyAsync(u => u.Email == email, cancellationToken);
         }
 
         public async Task<Usuario> AddAsync(
             Usuario usuario,
             CancellationToken cancellationToken = default)
         {
-            _context.Usuarios.Add(usuario);
-            await _context.SaveChangesAsync(cancellationToken);
+            _context.Users.Add(usuario);
             return usuario;
         }
 
@@ -56,8 +80,7 @@ namespace Api.Repositories
             Usuario usuario,
             CancellationToken cancellationToken = default)
         {
-            _context.Usuarios.Remove(usuario);
-            await _context.SaveChangesAsync(cancellationToken);
+            _context.Users.Remove(usuario);
         }
     }
 }

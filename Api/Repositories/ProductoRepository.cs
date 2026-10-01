@@ -27,12 +27,37 @@ namespace Api.Repositories
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<Producto?> GetById(
+        public async Task<(List<Producto> Items, int Total)> GetActivosPagedAsync(
+            int pagina,
+            int cantidad,
+            CancellationToken cancellationToken = default)
+        {
+            var query = _context.Productos
+                .Where(p => p.Activo)
+                .AsQueryable();
+            var total = await query.CountAsync(cancellationToken);
+            var items = await query
+                .OrderBy(p => p.Nombre)
+                .Skip((pagina - 1) * cantidad)
+                .Take(cantidad)
+                .ToListAsync(cancellationToken);
+            return (items, total);
+        }
+
+        public async Task<Producto?> GetByIdAsync(
             int id,
             CancellationToken cancellationToken = default)
         {
             return await _context.Productos
                 .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+        }
+
+        public async Task<Producto?> GetByCodigoAsync(
+            string codigo,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.Productos
+                .FirstOrDefaultAsync(p => p.Codigo == codigo, cancellationToken);
         }
 
         public async Task<IReadOnlyList<Producto>> GetPorCategoriaAsync(
@@ -74,12 +99,6 @@ namespace Api.Repositories
             CancellationToken cancellationToken = default)
         {
             producto.Activo = false;
-        }
-
-        public async Task<Producto?> GetByCodigo(string codigo, CancellationToken cancellationToken = default)
-        {
-            return await _context.Productos
-                .FirstOrDefaultAsync(p => p.Codigo.Contains(codigo) , cancellationToken);
         }
     }
 }

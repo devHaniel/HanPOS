@@ -1,7 +1,8 @@
-using Api.Models.Entities;
+using Api.DTOs.Cliente;
+using Api.DTOs.Venta;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Api.Services.Interfaces
 {
@@ -12,19 +13,22 @@ namespace Api.Services.Interfaces
     public interface IClienteService
     {
         // Obtener todos los clientes
-        Task<IReadOnlyList<Cliente>> GetAllAsync(CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<ClienteResponseDto>> GetAllAsync(CancellationToken cancellationToken = default);
 
-        // Obtener con sus ventas
-        Task<Cliente?> GetWithVentasAsync(CancellationToken cancellationToken = default);
+        // Obtener cliente por ID
+        Task<ClienteResponseDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
         // Obtener por RTN
-        Task<Cliente?> GetByRtnAsync(string rtn, CancellationToken cancellationToken = default);
+        Task<ClienteResponseDto?> GetByRtnAsync(string rtn, CancellationToken cancellationToken = default);
+
+        // Obtener ventas de un cliente
+        Task<IReadOnlyList<VentaResponseDto>> GetVentasAsync(int clienteId, CancellationToken cancellationToken = default);
 
         // Crear cliente
-        Task<Cliente> CrearAsync(Cliente cliente, CancellationToken cancellationToken = default);
+        Task<ClienteResponseDto> CrearAsync(ClienteCrearRequest dto, CancellationToken cancellationToken = default);
 
         // Actualizar cliente
-        Task<bool> ActualizarAsync(Cliente cliente, CancellationToken cancellationToken = default);
+        Task<ClienteResponseDto?> ActualizarAsync(ClienteActualizarRequest dto, CancellationToken cancellationToken = default);
 
         // Eliminar cliente
         Task<bool> EliminarAsync(int id, CancellationToken cancellationToken = default);

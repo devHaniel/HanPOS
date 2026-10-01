@@ -1,16 +1,16 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Api.Models.Entities;
 
 namespace Api.Data
 {
-    public class AppDbContext : DbContext
+    public class AppDbContext : IdentityDbContext<Usuario, IdentityRole<int>, int>
     {
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)
         {
         }
-
-        public DbSet<Usuario> Usuarios { get; set; }
 
         public DbSet<Producto> Productos { get; set; }
 
@@ -39,8 +39,14 @@ namespace Api.Data
             // Apply all configurations from the current assembly
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 
-            // Example of additional global configurations (optional):
-            // modelBuilder.Entity<Usuario>().ToTable("Usuarios");
+            // Identity table names
+            modelBuilder.Entity<Usuario>().ToTable("Usuarios");
+            modelBuilder.Entity<IdentityRole<int>>().ToTable("Roles");
+            modelBuilder.Entity<IdentityUserRole<int>>().ToTable("UsuarioRoles");
+            modelBuilder.Entity<IdentityUserClaim<int>>().ToTable("UsuarioClaims");
+            modelBuilder.Entity<IdentityUserLogin<int>>().ToTable("UsuarioLogins");
+            modelBuilder.Entity<IdentityRoleClaim<int>>().ToTable("RoleClaims");
+            modelBuilder.Entity<IdentityUserToken<int>>().ToTable("UsuarioTokens");
         }
     }
 }

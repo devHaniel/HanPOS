@@ -16,6 +16,11 @@ namespace Api.Repositories.Interfaces
         Task<IReadOnlyList<Proveedor>> GetAllAsync(
             CancellationToken cancellationToken = default);
 
+        // Obtener proveedor por ID
+        Task<Proveedor?> GetByIdAsync(
+            int id,
+            CancellationToken cancellationToken = default);
+
         // Obtener con sus compras
         Task<Proveedor?> GetWithComprasAsync(
             CancellationToken cancellationToken = default);

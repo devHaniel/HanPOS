@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Api.Repositories
 {
@@ -25,6 +26,14 @@ namespace Api.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<DetalleVenta?> GetByIdAsync(
+            int id,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.DetallesVenta
+                .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
+        }
+
         public async Task<IReadOnlyList<DetalleVenta>> GetPorVentaAsync(
             int ventaId,
             CancellationToken cancellationToken = default)
@@ -34,12 +43,27 @@ namespace Api.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<IReadOnlyList<DetalleVenta>> GetByVentaIdAsync(
+            int ventaId,
+            CancellationToken cancellationToken = default)
+        {
+            return await GetPorVentaAsync(ventaId, cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<DetalleVenta>> GetByProductoIdAsync(
+            int productoId,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.DetallesVenta
+                .Where(d => d.ProductoId == productoId)
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<DetalleVenta> AddAsync(
             DetalleVenta detalle,
             CancellationToken cancellationToken = default)
         {
             _context.DetallesVenta.Add(detalle);
-            await _context.SaveChangesAsync(cancellationToken);
             return detalle;
         }
 
@@ -48,7 +72,6 @@ namespace Api.Repositories
             CancellationToken cancellationToken = default)
         {
             _context.DetallesVenta.Remove(detalle);
-            await _context.SaveChangesAsync(cancellationToken);
         }
     }
 }

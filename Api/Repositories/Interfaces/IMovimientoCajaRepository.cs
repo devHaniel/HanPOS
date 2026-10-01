@@ -2,6 +2,7 @@ using Api.Models.Entities;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Api.Repositories.Interfaces
 {
@@ -15,12 +16,16 @@ namespace Api.Repositories.Interfaces
         Task<IReadOnlyList<MovimientoCaja>> GetAllAsync(
             CancellationToken cancellationToken = default);
 
+        // Obtener movimiento por ID
+        Task<MovimientoCaja?> GetByIdAsync(
+            int id,
+            CancellationToken cancellationToken = default);
+
         // Obtener por caja
         Task<IReadOnlyList<MovimientoCaja>> GetPorCajaAsync(
             int cajaId,
             CancellationToken cancellationToken = default);
 
-        Task<MovimientoCaja?> GetPorId(int id);
         // Agregar movimiento
         Task<MovimientoCaja> AddAsync(
             MovimientoCaja movimiento,

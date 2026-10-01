@@ -21,14 +21,14 @@ namespace Api.Models.Entities
 
         public int UsuarioId { get; set; }
 
-        public Usuario Usuario { get; set; } = null!;
+        public Usuario? Usuario { get; set; }
 
         public int ProveedorId { get; set; }
 
-        public Proveedor Proveedor { get; set; } = null!;
+        public Proveedor? Proveedor { get; set; }
 
         public int CajaId {get; set;}
-        public Caja Caja {get; set;}
+        public Caja? Caja {get; set;}
 
         public ICollection<DetalleCompra> Detalles { get; set; }
             = new List<DetalleCompra>();

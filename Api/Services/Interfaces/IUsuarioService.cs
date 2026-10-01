@@ -1,4 +1,7 @@
-using Api.Models.Entities;
+using Api.DTOs.Usuario;
+using Api.DTOs.Venta;
+using Api.DTOs.Compra;
+using Api.DTOs.Caja;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,15 +15,30 @@ namespace Api.Services.Interfaces
     public interface IUsuarioService
     {
         // Obtener todos los usuarios activos
-        Task<IReadOnlyList<Usuario>> GetActivosAsync(CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<UsuarioResponseDto>> GetActivosAsync(CancellationToken cancellationToken = default);
+
+        // Obtener usuario por ID
+        Task<UsuarioResponseDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+
+        // Obtener usuario por Username
+        Task<UsuarioResponseDto?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default);
+
+        // Obtener ventas de un usuario
+        Task<IReadOnlyList<VentaResponseDto>> GetVentasAsync(int usuarioId, CancellationToken cancellationToken = default);
+
+        // Obtener compras de un usuario
+        Task<IReadOnlyList<CompraResponseDto>> GetComprasAsync(int usuarioId, CancellationToken cancellationToken = default);
+
+        // Obtener cajas de un usuario
+        Task<IReadOnlyList<CajaResponseDto>> GetCajasAsync(int usuarioId, CancellationToken cancellationToken = default);
 
         // Crear usuario (valida username único)
-        Task<Usuario> CrearAsync(Usuario usuario, CancellationToken cancellationToken = default);
+        Task<UsuarioResponseDto> CrearAsync(UsuarioCrearRequest dto, CancellationToken cancellationToken = default);
 
         // Actualizar usuario
-        Task<bool> ActualizarAsync(Usuario usuario, CancellationToken cancellationToken = default);
+        Task<UsuarioResponseDto?> ActualizarAsync(UsuarioActualizarRequest dto, CancellationToken cancellationToken = default);
 
-        // Eliminar usuario
+        // Eliminar usuario (soft delete)
         Task<bool> EliminarAsync(int id, CancellationToken cancellationToken = default);
     }
 }

@@ -22,11 +22,11 @@ namespace Api.Models.Entities
         public EstadoVenta Estado { get; set; }
 
         public int CajaId {get; set;}
-        public Caja Caja {get; set;}
+        public Caja? Caja {get; set;}
 
         public int UsuarioId { get; set; }
 
-        public Usuario Usuario { get; set; } = null!;
+        public Usuario? Usuario { get; set; }
 
         public int? ClienteId { get; set; }
 

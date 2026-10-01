@@ -16,6 +16,17 @@ namespace Api.Repositories.Interfaces
         Task<IReadOnlyList<Caja>> GetAllAsync(
             CancellationToken cancellationToken = default);
 
+        // Obtener todas las cajas con paginación
+        Task<(List<Caja> Items, int Total)> GetAllPagedAsync(
+            int pagina,
+            int cantidad,
+            CancellationToken cancellationToken = default);
+
+        // Obtener caja por ID
+        Task<Caja?> GetByIdAsync(
+            int id,
+            CancellationToken cancellationToken = default);
+
         // Obtener caja abierta actual
         Task<Caja?> GetAbiertaAsync(
             CancellationToken cancellationToken = default);
