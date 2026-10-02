@@ -1,0 +1,52 @@
+# .dockerignore - Files to exclude from Docker build context
+
+# Build outputs
+bin/
+obj/
+out/
+publish/
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+logs/
+
+# Tests (if any)
+*Tests/
+*Test/
+
+# Local development
+*.local.*
+launchSettings.json
+appsettings.Development.json
+appsettings.Local.json
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Documentation
+*.md
+README.md
+
+# NuGet
+packages/
+*.nupkg
+
+# Migrations (optional - keep if you want them in image)
+# Migrations/
