@@ -2,6 +2,7 @@ using Api.DTOs.Caja;
 using Api.DTOs.MovimientoCaja;
 using Api.DTOs.Paginacion;
 using Api.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,6 +14,7 @@ namespace Api.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class CajaController : ControllerBase
     {
         private readonly ICajaService _cajaService;
@@ -23,9 +25,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets all cash registers with pagination.
+        /// Gets all cash registers with pagination. (Admin only)
         /// </summary>
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<PagedResult<CajaResponseDto>>> GetAll(
             int pagina = 1,
             int cantidad = 10,
@@ -36,9 +39,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets a cash register by ID.
+        /// Gets a cash register by ID. (Admin, Vendedor - own caja)
         /// </summary>
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<CajaResponseDto>> GetById(
             int id,
             CancellationToken cancellationToken = default)
@@ -51,9 +55,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets the currently open cash register.
+        /// Gets the currently open cash register. (Admin, Vendedor)
         /// </summary>
         [HttpGet("abierta")]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<CajaResponseDto>> GetAbierta(
             CancellationToken cancellationToken = default)
         {
@@ -65,9 +70,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Creates a new cash register (opens a new cash session).
+        /// Creates a new cash register (opens a new cash session). (Admin, Vendedor)
         /// </summary>
         [HttpPost]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<CajaResponseDto>> Crear(
             [FromBody] CajaCrearRequest dto,
             CancellationToken cancellationToken = default)
@@ -77,9 +83,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Closes a cash register.
+        /// Closes a cash register. (Admin, Vendedor - own caja)
         /// </summary>
         [HttpPost("{id}/cerrar")]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<CajaResponseDto>> Cerrar(
             int id,
             CancellationToken cancellationToken = default)
@@ -92,9 +99,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Updates a cash register.
+        /// Updates a cash register. (Admin only)
         /// </summary>
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<CajaResponseDto>> Actualizar(
             int id,
             [FromBody] CajaActualizarRequest dto,
@@ -111,9 +119,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Deletes a cash register.
+        /// Deletes a cash register. (Admin only)
         /// </summary>
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult> Eliminar(
             int id,
             CancellationToken cancellationToken = default)
@@ -126,9 +135,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets movements for a cash register.
+        /// Gets movements for a cash register. (Admin, Vendedor)
         /// </summary>
         [HttpGet("{cajaId}/movimientos")]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<IReadOnlyList<MovimientoCajaResponseDto>>> GetMovimientos(
             int cajaId,
             CancellationToken cancellationToken = default)

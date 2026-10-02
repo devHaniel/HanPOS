@@ -11,7 +11,7 @@ namespace Api.Data
             : base(options)
         {
         }
-
+        public DbSet<HistorialRefreshToken> HistorialRefreshTokens {get; set;}
         public DbSet<Producto> Productos { get; set; }
 
         public DbSet<Categoria> Categorias { get; set; }

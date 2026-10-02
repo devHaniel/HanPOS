@@ -4,6 +4,7 @@ using Api.DTOs.Usuario;
 using Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,6 +16,7 @@ namespace Api.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [EnableRateLimiting("auth")]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
@@ -25,7 +27,7 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Authenticates a user and returns a JWT token.
+        /// Authenticates a user and returns a JWT token with refresh token.
         /// </summary>
         [HttpPost("login")]
         [AllowAnonymous]
@@ -41,7 +43,7 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Registers a new user and returns a JWT token.
+        /// Registers a new user and returns a JWT token with refresh token.
         /// </summary>
         [HttpPost("register")]
         [AllowAnonymous]
@@ -54,6 +56,39 @@ namespace Api.Controllers
                 return BadRequest(new { message = "El nombre de usuario o email ya existe" });
 
             return Ok(response);
+        }
+
+        /// <summary>
+        /// Refreshes the access token using a refresh token.
+        /// </summary>
+        [HttpPost("refresh-token")]
+        [AllowAnonymous]
+        [EnableRateLimiting("refresh")]
+        public async Task<ActionResult<AuthResponseDTO>> RefreshToken(
+            [FromBody] RefreshTokenDTO dto,
+            CancellationToken cancellationToken = default)
+        {
+            var response = await _authService.RefreshTokenAsync(dto, cancellationToken);
+            if (response == null)
+                return Unauthorized(new { message = "Refresh token inválido o expirado" });
+
+            return Ok(response);
+        }
+
+        /// <summary>
+        /// Revokes a refresh token (logout).
+        /// </summary>
+        [HttpPost("revoke-token")]
+        [Authorize]
+        public async Task<ActionResult> RevokeToken(
+            [FromBody] RefreshTokenDTO dto,
+            CancellationToken cancellationToken = default)
+        {
+            var success = await _authService.RevokeRefreshTokenAsync(dto.RefreshToken, cancellationToken);
+            if (!success)
+                return BadRequest(new { message = "Refresh token inválido" });
+
+            return Ok(new { message = "Token revocado exitosamente" });
         }
 
         /// <summary>

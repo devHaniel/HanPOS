@@ -1,6 +1,7 @@
 using Api.DTOs.Categoria;
 using Api.DTOs.Producto;
 using Api.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,6 +13,7 @@ namespace Api.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class CategoriaController : ControllerBase
     {
         private readonly ICategoriaService _categoriaService;
@@ -22,9 +24,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets all active categories.
+        /// Gets all active categories. (Admin, Vendedor)
         /// </summary>
         [HttpGet("activas")]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<IReadOnlyList<CategoriaResponseDto>>> GetActivas(
             CancellationToken cancellationToken = default)
         {
@@ -33,9 +36,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets a category by ID.
+        /// Gets a category by ID. (Admin, Vendedor)
         /// </summary>
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<CategoriaResponseDto>> GetById(
             int id,
             CancellationToken cancellationToken = default)
@@ -48,9 +52,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets products for a category.
+        /// Gets products for a category. (Admin, Vendedor)
         /// </summary>
         [HttpGet("{id}/productos")]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<IReadOnlyList<ProductoResponseDto>>> GetProductos(
             int id,
             CancellationToken cancellationToken = default)
@@ -60,9 +65,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Creates a new category.
+        /// Creates a new category. (Admin only)
         /// </summary>
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<CategoriaResponseDto>> Crear(
             [FromBody] CategoriaCrearRequest dto,
             CancellationToken cancellationToken = default)
@@ -72,9 +78,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Updates an existing category.
+        /// Updates an existing category. (Admin only)
         /// </summary>
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<CategoriaResponseDto>> Actualizar(
             int id,
             [FromBody] CategoriaActualizarRequest dto,
@@ -91,9 +98,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Deletes a category (soft delete).
+        /// Deletes a category (soft delete). (Admin only)
         /// </summary>
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult> Eliminar(
             int id,
             CancellationToken cancellationToken = default)

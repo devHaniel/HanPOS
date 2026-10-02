@@ -1,5 +1,6 @@
 using Api.DTOs.MovimientoCaja;
 using Api.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ namespace Api.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class MovimientoCajaController : ControllerBase
     {
         private readonly IMovimientoCajaService _movimientoCajaService;
@@ -21,9 +23,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets all cash movements.
+        /// Gets all cash movements. (Admin only)
         /// </summary>
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<IReadOnlyList<MovimientoCajaResponseDto>>> GetAll(
             CancellationToken cancellationToken = default)
         {
@@ -32,9 +35,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets a cash movement by ID.
+        /// Gets a cash movement by ID. (Admin, Vendedor)
         /// </summary>
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<MovimientoCajaResponseDto>> GetById(
             int id,
             CancellationToken cancellationToken = default)
@@ -47,9 +51,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets cash movements by cash register.
+        /// Gets cash movements by cash register. (Admin, Vendedor)
         /// </summary>
         [HttpGet("por-caja/{cajaId}")]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<IReadOnlyList<MovimientoCajaResponseDto>>> GetPorCaja(
             int cajaId,
             CancellationToken cancellationToken = default)
@@ -59,9 +64,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Creates a new cash movement.
+        /// Creates a new cash movement. (Admin, Vendedor)
         /// </summary>
         [HttpPost]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<MovimientoCajaResponseDto>> Crear(
             [FromBody] MovimientoCajaCrearRequest dto,
             CancellationToken cancellationToken = default)
@@ -71,9 +77,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Updates an existing cash movement.
+        /// Updates an existing cash movement. (Admin only)
         /// </summary>
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<MovimientoCajaResponseDto>> Actualizar(
             int id,
             [FromBody] MovimientoCajaActualizarRequest dto,
@@ -90,9 +97,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Deletes a cash movement.
+        /// Deletes a cash movement. (Admin only)
         /// </summary>
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult> Eliminar(
             int id,
             CancellationToken cancellationToken = default)

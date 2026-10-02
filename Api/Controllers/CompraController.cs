@@ -2,6 +2,7 @@ using Api.DTOs.Compra;
 using Api.DTOs.DetalleCompra;
 using Api.DTOs.Paginacion;
 using Api.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,6 +14,7 @@ namespace Api.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class CompraController : ControllerBase
     {
         private readonly ICompraService _compraService;
@@ -23,9 +25,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets all purchases with pagination.
+        /// Gets all purchases with pagination. (Admin only)
         /// </summary>
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<PagedResult<CompraResponseDto>>> GetAll(
             int pagina = 1,
             int cantidad = 10,
@@ -36,9 +39,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets a purchase by ID.
+        /// Gets a purchase by ID. (Admin only)
         /// </summary>
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<CompraResponseDto>> GetById(
             int id,
             CancellationToken cancellationToken = default)
@@ -51,9 +55,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets purchases by date.
+        /// Gets purchases by date. (Admin only)
         /// </summary>
         [HttpGet("por-fecha/{fecha}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<IReadOnlyList<CompraResponseDto>>> GetPorFecha(
             DateTime fecha,
             CancellationToken cancellationToken = default)
@@ -63,9 +68,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets purchases by provider.
+        /// Gets purchases by provider. (Admin only)
         /// </summary>
         [HttpGet("por-proveedor/{proveedorId}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<IReadOnlyList<CompraResponseDto>>> GetPorProveedor(
             int proveedorId,
             CancellationToken cancellationToken = default)
@@ -75,9 +81,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets details of a purchase.
+        /// Gets details of a purchase. (Admin only)
         /// </summary>
         [HttpGet("{id}/detalles")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<IReadOnlyList<DetalleCompraResponseDto>>> GetDetalles(
             int id,
             CancellationToken cancellationToken = default)
@@ -87,9 +94,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Creates a new purchase.
+        /// Creates a new purchase. (Admin only)
         /// </summary>
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<CompraResponseDto>> Crear(
             [FromBody] CompraCrearRequest dto,
             CancellationToken cancellationToken = default)
@@ -99,9 +107,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Updates an existing purchase.
+        /// Updates an existing purchase. (Admin only)
         /// </summary>
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<CompraResponseDto>> Actualizar(
             int id,
             [FromBody] CompraActualizarRequest dto,
@@ -118,9 +127,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Deletes a purchase.
+        /// Deletes a purchase. (Admin only)
         /// </summary>
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult> Eliminar(
             int id,
             CancellationToken cancellationToken = default)

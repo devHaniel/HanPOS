@@ -3,6 +3,7 @@ using Api.DTOs.DetalleVenta;
 using Api.DTOs.DetalleCompra;
 using Api.DTOs.Paginacion;
 using Api.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ namespace Api.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ProductoController : ControllerBase
     {
         private readonly IProductoService _productoService;
@@ -24,9 +26,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets all active products with pagination.
+        /// Gets all active products with pagination. (Admin, Vendedor)
         /// </summary>
         [HttpGet("activos")]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<PagedResult<ProductoResponseDto>>> GetActivos(
             int pagina = 1,
             int cantidad = 10,
@@ -37,9 +40,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets a product by ID.
+        /// Gets a product by ID. (Admin, Vendedor)
         /// </summary>
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<ProductoResponseDto>> GetById(
             int id,
             CancellationToken cancellationToken = default)
@@ -52,9 +56,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets a product by code.
+        /// Gets a product by code. (Admin, Vendedor)
         /// </summary>
         [HttpGet("codigo/{codigo}")]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<ProductoResponseDto>> GetByCodigo(
             string codigo,
             CancellationToken cancellationToken = default)
@@ -67,9 +72,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets sales (detalles) for a product.
+        /// Gets sales (detalles) for a product. (Admin only)
         /// </summary>
         [HttpGet("{id}/ventas")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<IReadOnlyList<DetalleVentaResponseDto>>> GetVentas(
             int id,
             CancellationToken cancellationToken = default)
@@ -79,9 +85,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets purchases (detalles) for a product.
+        /// Gets purchases (detalles) for a product. (Admin only)
         /// </summary>
         [HttpGet("{id}/compras")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<IReadOnlyList<DetalleCompraResponseDto>>> GetCompras(
             int id,
             CancellationToken cancellationToken = default)
@@ -91,9 +98,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Creates a new product.
+        /// Creates a new product. (Admin only)
         /// </summary>
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<ProductoResponseDto>> Crear(
             [FromBody] ProductoCrearRequest dto,
             CancellationToken cancellationToken = default)
@@ -103,9 +111,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Updates an existing product.
+        /// Updates an existing product. (Admin only)
         /// </summary>
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<ProductoResponseDto>> Actualizar(
             int id,
             [FromBody] ProductoActualizarRequest dto,
@@ -122,9 +131,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Deletes a product (soft delete).
+        /// Deletes a product (soft delete). (Admin only)
         /// </summary>
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult> Eliminar(
             int id,
             CancellationToken cancellationToken = default)

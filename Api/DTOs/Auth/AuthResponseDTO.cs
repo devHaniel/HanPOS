@@ -8,6 +8,7 @@ namespace Api.DTOs.Auth
     public class AuthResponseDTO
     {
         public string Token { get; set; } = null!;
+        public string RefreshToken { get; set; } = null!;
         public DateTime Expiration { get; set; }
         public UsuarioDTO Usuario { get; set; } = null!;
     }

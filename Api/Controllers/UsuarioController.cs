@@ -3,6 +3,7 @@ using Api.DTOs.Venta;
 using Api.DTOs.Compra;
 using Api.DTOs.Caja;
 using Api.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ namespace Api.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class UsuarioController : ControllerBase
     {
         private readonly IUsuarioService _usuarioService;
@@ -24,9 +26,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets all active users.
+        /// Gets all active users. (Admin only)
         /// </summary>
         [HttpGet("activos")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<IReadOnlyList<UsuarioResponseDto>>> GetActivos(
             CancellationToken cancellationToken = default)
         {
@@ -35,7 +38,7 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets a user by ID.
+        /// Gets a user by ID. (Admin or own profile)
         /// </summary>
         [HttpGet("{id}")]
         public async Task<ActionResult<UsuarioResponseDto>> GetById(
@@ -50,9 +53,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets a user by username.
+        /// Gets a user by username. (Admin only)
         /// </summary>
         [HttpGet("username/{username}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<UsuarioResponseDto>> GetByUsername(
             string username,
             CancellationToken cancellationToken = default)
@@ -65,9 +69,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets sales for a user.
+        /// Gets sales for a user. (Admin or Vendedor - own sales)
         /// </summary>
         [HttpGet("{id}/ventas")]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<IReadOnlyList<VentaResponseDto>>> GetVentas(
             int id,
             CancellationToken cancellationToken = default)
@@ -77,9 +82,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets purchases for a user.
+        /// Gets purchases for a user. (Admin only)
         /// </summary>
         [HttpGet("{id}/compras")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<IReadOnlyList<CompraResponseDto>>> GetCompras(
             int id,
             CancellationToken cancellationToken = default)
@@ -89,9 +95,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets cash registers for a user.
+        /// Gets cash registers for a user. (Admin or Vendedor - own cajas)
         /// </summary>
         [HttpGet("{id}/cajas")]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<IReadOnlyList<CajaResponseDto>>> GetCajas(
             int id,
             CancellationToken cancellationToken = default)
@@ -101,9 +108,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Creates a new user.
+        /// Creates a new user. (Admin only)
         /// </summary>
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<UsuarioResponseDto>> Crear(
             [FromBody] UsuarioCrearRequest dto,
             CancellationToken cancellationToken = default)
@@ -113,9 +121,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Updates an existing user.
+        /// Updates an existing user. (Admin only)
         /// </summary>
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<UsuarioResponseDto>> Actualizar(
             int id,
             [FromBody] UsuarioActualizarRequest dto,
@@ -132,9 +141,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Deletes a user (soft delete).
+        /// Deletes a user (soft delete). (Admin only)
         /// </summary>
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult> Eliminar(
             int id,
             CancellationToken cancellationToken = default)

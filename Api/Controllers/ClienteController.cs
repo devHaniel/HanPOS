@@ -1,6 +1,7 @@
 using Api.DTOs.Cliente;
 using Api.DTOs.Venta;
 using Api.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,6 +13,7 @@ namespace Api.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ClienteController : ControllerBase
     {
         private readonly IClienteService _clienteService;
@@ -22,9 +24,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets all clients.
+        /// Gets all clients. (Admin, Vendedor)
         /// </summary>
         [HttpGet]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<IReadOnlyList<ClienteResponseDto>>> GetAll(
             CancellationToken cancellationToken = default)
         {
@@ -33,9 +36,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets a client by ID.
+        /// Gets a client by ID. (Admin, Vendedor)
         /// </summary>
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<ClienteResponseDto>> GetById(
             int id,
             CancellationToken cancellationToken = default)
@@ -48,9 +52,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets a client by RTN.
+        /// Gets a client by RTN. (Admin, Vendedor)
         /// </summary>
         [HttpGet("rtn/{rtn}")]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<ClienteResponseDto>> GetByRtn(
             string rtn,
             CancellationToken cancellationToken = default)
@@ -63,9 +68,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets sales for a client.
+        /// Gets sales for a client. (Admin, Vendedor)
         /// </summary>
         [HttpGet("{id}/ventas")]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<IReadOnlyList<VentaResponseDto>>> GetVentas(
             int id,
             CancellationToken cancellationToken = default)
@@ -75,9 +81,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Creates a new client.
+        /// Creates a new client. (Admin, Vendedor)
         /// </summary>
         [HttpPost]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<ClienteResponseDto>> Crear(
             [FromBody] ClienteCrearRequest dto,
             CancellationToken cancellationToken = default)
@@ -87,9 +94,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Updates an existing client.
+        /// Updates an existing client. (Admin only)
         /// </summary>
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<ClienteResponseDto>> Actualizar(
             int id,
             [FromBody] ClienteActualizarRequest dto,
@@ -106,9 +114,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Deletes a client.
+        /// Deletes a client. (Admin only)
         /// </summary>
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult> Eliminar(
             int id,
             CancellationToken cancellationToken = default)

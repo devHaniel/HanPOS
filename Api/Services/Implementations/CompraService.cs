@@ -18,6 +18,7 @@ namespace Api.Services.Implementations
         private readonly IDetalleCompraRepository _detalleRepository;
         private readonly IProductoRepository _productoRepostory;
         private readonly IMovimientoCajaRepository _movimientoRepository;
+        private readonly ICajaRepository _cajaRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public CompraService(
@@ -25,12 +26,14 @@ namespace Api.Services.Implementations
             IUnitOfWork unitOfWork,
             IDetalleCompraRepository detalleRepository,
             IProductoRepository productoRepository,
-            IMovimientoCajaRepository movimientoCajaRepository)
+            IMovimientoCajaRepository movimientoCajaRepository,
+            ICajaRepository cajaRepository)
         {
             _compraRepository = compraRepository;
             _unitOfWork = unitOfWork;
             _detalleRepository = detalleRepository;
             _productoRepostory = productoRepository;
+            _cajaRepository = cajaRepository;
             _movimientoRepository = movimientoCajaRepository;
         }
 
@@ -180,6 +183,11 @@ namespace Api.Services.Implementations
 
         private async Task RegistrarMovimientoCajaAsync(Compra compra, CancellationToken cancellationToken)
         {
+            var caja = await _cajaRepository.GetAbiertaAsync(cancellationToken);
+
+            if(caja == null || caja.Id != compra.CajaId)
+                throw new Exception("La caja asociada a la compra no está abierta o no coincide con la compra.");
+
             var movimiento = new MovimientoCaja
             {
                 CajaId = compra.CajaId,

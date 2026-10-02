@@ -2,6 +2,7 @@ using Api.DTOs.Venta;
 using Api.DTOs.DetalleVenta;
 using Api.DTOs.Paginacion;
 using Api.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,6 +14,7 @@ namespace Api.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class VentaController : ControllerBase
     {
         private readonly IVentaService _ventaService;
@@ -23,9 +25,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets all sales with pagination.
+        /// Gets all sales with pagination. (Admin, Vendedor)
         /// </summary>
         [HttpGet]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<PagedResult<VentaResponseDto>>> GetAll(
             int pagina = 1,
             int cantidad = 10,
@@ -36,9 +39,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets a sale by ID.
+        /// Gets a sale by ID. (Admin, Vendedor)
         /// </summary>
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<VentaResponseDto>> GetById(
             int id,
             CancellationToken cancellationToken = default)
@@ -51,9 +55,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets sales by date.
+        /// Gets sales by date. (Admin, Vendedor)
         /// </summary>
         [HttpGet("por-fecha/{fecha}")]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<IReadOnlyList<VentaResponseDto>>> GetPorFecha(
             DateTime fecha,
             CancellationToken cancellationToken = default)
@@ -63,9 +68,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets sales by user.
+        /// Gets sales by user. (Admin, Vendedor - own sales)
         /// </summary>
         [HttpGet("por-usuario/{usuarioId}")]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<IReadOnlyList<VentaResponseDto>>> GetPorUsuario(
             int usuarioId,
             CancellationToken cancellationToken = default)
@@ -75,9 +81,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets details of a sale.
+        /// Gets details of a sale. (Admin, Vendedor)
         /// </summary>
         [HttpGet("{id}/detalles")]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<IReadOnlyList<DetalleVentaResponseDto>>> GetDetalles(
             int id,
             CancellationToken cancellationToken = default)
@@ -87,9 +94,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Creates a new sale.
+        /// Creates a new sale. (Admin, Vendedor)
         /// </summary>
         [HttpPost]
+        [Authorize(Roles = "Admin,Vendedor")]
         public async Task<ActionResult<VentaResponseDto>> Crear(
             [FromBody] VentaCrearRequest dto,
             CancellationToken cancellationToken = default)
@@ -99,9 +107,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Updates an existing sale.
+        /// Updates an existing sale. (Admin only)
         /// </summary>
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<VentaResponseDto>> Actualizar(
             int id,
             [FromBody] VentaActualizarRequest dto,
@@ -118,9 +127,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Deletes a sale.
+        /// Deletes a sale. (Admin only)
         /// </summary>
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult> Eliminar(
             int id,
             CancellationToken cancellationToken = default)

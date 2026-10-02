@@ -12,14 +12,24 @@ namespace Api.Services.Interfaces
     public interface IAuthService
     {
         /// <summary>
-        /// Autentica un usuario y genera un token JWT.
+        /// Autentica un usuario y genera un token JWT con refresh token.
         /// </summary>
         Task<AuthResponseDTO?> LoginAsync(LoginDTO dto, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Registra un nuevo usuario y genera un token JWT.
+        /// Registra un nuevo usuario y genera un token JWT con refresh token.
         /// </summary>
         Task<AuthResponseDTO?> RegisterAsync(RegisterDTO dto, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Refresca el token de acceso usando el refresh token.
+        /// </summary>
+        Task<AuthResponseDTO?> RefreshTokenAsync(RefreshTokenDTO dto, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Revoca el refresh token (logout).
+        /// </summary>
+        Task<bool> RevokeRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Cambia la contraseña de un usuario.

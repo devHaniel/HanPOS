@@ -1,6 +1,7 @@
 using Api.DTOs.Proveedor;
 using Api.DTOs.Compra;
 using Api.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,6 +13,7 @@ namespace Api.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ProveedorController : ControllerBase
     {
         private readonly IProveedorService _proveedorService;
@@ -22,9 +24,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets all providers.
+        /// Gets all providers. (Admin only)
         /// </summary>
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<IReadOnlyList<ProveedorResponseDto>>> GetAll(
             CancellationToken cancellationToken = default)
         {
@@ -33,9 +36,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets a provider by ID.
+        /// Gets a provider by ID. (Admin only)
         /// </summary>
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<ProveedorResponseDto>> GetById(
             int id,
             CancellationToken cancellationToken = default)
@@ -48,9 +52,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets a provider by RTN.
+        /// Gets a provider by RTN. (Admin only)
         /// </summary>
         [HttpGet("rtn/{rtn}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<ProveedorResponseDto>> GetByRtn(
             string rtn,
             CancellationToken cancellationToken = default)
@@ -63,9 +68,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Gets purchases for a provider.
+        /// Gets purchases for a provider. (Admin only)
         /// </summary>
         [HttpGet("{id}/compras")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<IReadOnlyList<CompraResponseDto>>> GetCompras(
             int id,
             CancellationToken cancellationToken = default)
@@ -75,9 +81,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Creates a new provider.
+        /// Creates a new provider. (Admin only)
         /// </summary>
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<ProveedorResponseDto>> Crear(
             [FromBody] ProveedorCrearRequest dto,
             CancellationToken cancellationToken = default)
@@ -87,9 +94,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Updates an existing provider.
+        /// Updates an existing provider. (Admin only)
         /// </summary>
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<ProveedorResponseDto>> Actualizar(
             int id,
             [FromBody] ProveedorActualizarRequest dto,
@@ -106,9 +114,10 @@ namespace Api.Controllers
         }
 
         /// <summary>
-        /// Deletes a provider.
+        /// Deletes a provider. (Admin only)
         /// </summary>
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult> Eliminar(
             int id,
             CancellationToken cancellationToken = default)

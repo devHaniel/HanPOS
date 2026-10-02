@@ -22,17 +22,20 @@ namespace Api.Services.Implementations
         private readonly SignInManager<Usuario> _signInManager;
         private readonly IUsuarioRepository _usuarioRepository;
         private readonly IConfiguration _configuration;
+        private readonly ITokenService _tokenService;
 
         public AuthService(
             UserManager<Usuario> userManager,
             SignInManager<Usuario> signInManager,
             IUsuarioRepository usuarioRepository,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            ITokenService tokenService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _usuarioRepository = usuarioRepository;
             _configuration = configuration;
+            _tokenService = tokenService;
         }
 
         public async Task<AuthResponseDTO?> LoginAsync(LoginDTO dto, CancellationToken cancellationToken = default)
@@ -79,6 +82,34 @@ namespace Api.Services.Implementations
             return await GenerateAuthResponseAsync(usuario);
         }
 
+        public async Task<AuthResponseDTO?> RefreshTokenAsync(RefreshTokenDTO dto, CancellationToken cancellationToken = default)
+        {
+            // Obtener el historial del refresh token
+            var historial = await _tokenService.DevolverRefreshToken(dto.RefreshToken);
+            if (historial == null)
+                return null;
+
+            // Obtener el usuario
+            var usuario = await _userManager.FindByIdAsync(historial.UsuarioId.ToString());
+            if (usuario == null || !usuario.Activo)
+                return null;
+
+            // Revocar el refresh token actual
+            await _tokenService.RevocarRefreshTokenAsync(historial);
+
+            // Generar nueva respuesta de autenticación
+            return await GenerateAuthResponseAsync(usuario);
+        }
+
+        public async Task<bool> RevokeRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
+        {
+            var historial = await _tokenService.DevolverRefreshToken(refreshToken);
+            if (historial == null)
+                return false;
+
+            return await _tokenService.RevocarRefreshTokenAsync(historial);
+        }
+
         public async Task<bool> ChangePasswordAsync(int userId, ChangePasswordDTO dto, CancellationToken cancellationToken = default)
         {
             var usuario = await _userManager.FindByIdAsync(userId.ToString());
@@ -108,12 +139,17 @@ namespace Api.Services.Implementations
         private async Task<AuthResponseDTO> GenerateAuthResponseAsync(Usuario usuario)
         {
             var roles = await _userManager.GetRolesAsync(usuario);
-            var token = GenerateJwtToken(usuario, roles);
-            var expiration = DateTime.UtcNow.AddHours(GetTokenExpirationHours());
+            var token = _tokenService.GenerarToken(usuario.Id, roles);
+            var refreshToken = _tokenService.GenerarRefreshToken();
+            var expiration = DateTime.UtcNow.AddMinutes(GetTokenExpirationMinutes());
+
+            // Guardar historial de refresh token
+            await _tokenService.GuardarHistorialRefreshToken(usuario.Id, token, refreshToken);
 
             return new AuthResponseDTO
             {
                 Token = token,
+                RefreshToken = refreshToken,
                 Expiration = expiration,
                 Usuario = new UsuarioDTO
                 {
@@ -126,41 +162,10 @@ namespace Api.Services.Implementations
             };
         }
 
-        private string GenerateJwtToken(Usuario usuario, System.Collections.Generic.IList<string> roles)
+        private int GetTokenExpirationMinutes()
         {
             var jwtSettings = _configuration.GetSection("JwtSettings");
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]!));
-            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var claims = new System.Collections.Generic.List<Claim>
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, usuario.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.UniqueName, usuario.UserName!),
-                new Claim(JwtRegisteredClaimNames.Email, usuario.Email!),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim("nombre", usuario.Nombre)
-            };
-
-            foreach (var role in roles)
-            {
-                claims.Add(new Claim(ClaimTypes.Role, role));
-            }
-
-            var token = new JwtSecurityToken(
-                issuer: jwtSettings["Issuer"],
-                audience: jwtSettings["Audience"],
-                claims: claims,
-                expires: DateTime.UtcNow.AddHours(GetTokenExpirationHours()),
-                signingCredentials: credentials
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
-
-        private int GetTokenExpirationHours()
-        {
-            var jwtSettings = _configuration.GetSection("JwtSettings");
-            return int.TryParse(jwtSettings["ExpirationHours"], out var hours) ? hours : 24;
+            return int.TryParse(jwtSettings["ExpirationMinutes"], out var minutes) ? minutes : 60;
         }
     }
 }
