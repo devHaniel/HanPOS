@@ -1,4 +1,4 @@
-# MercaPOS
+# HanPOS
 
 ### Cada venta en orden. Cada turno bajo control.
 
