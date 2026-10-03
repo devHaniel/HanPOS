@@ -15,9 +15,10 @@ MercaPOS es un punto de venta pensado para pequeñas tiendas y comercios que nec
 | **Ventas** | Busca productos por nombre o código, filtra por categoría, arma el carrito y registra el pago en efectivo, tarjeta o transferencia. |
 | **Productos y categorías** | Mantén el catálogo, precios, existencias y organización por categorías. |
 | **Clientes** | Consulta y administra los datos disponibles de tus clientes. |
+| **Proveedores** | Organiza los contactos de abastecimiento y consulta los datos de cada proveedor. |
 | **Caja** | Abre y cierra turnos, consulta el historial de cajas y revisa fondos iniciales y finales. |
 | **Movimientos** | Registra entradas y salidas de efectivo y consulta la actividad del turno. |
-| **Compras** | Registra entradas de mercancía y consulta el historial de compras. |
+| **Compras** | Registra entradas con varias líneas de productos, proveedor y turno de caja, y consulta el historial. |
 | **Resumen** | Consulta indicadores básicos de ventas e inventario reciente. |
 
 El flujo de venta muestra subtotal, impuesto, total y, al pagar en efectivo, el cambio. Las operaciones de caja requieren un turno abierto.

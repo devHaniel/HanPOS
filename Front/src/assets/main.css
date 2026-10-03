@@ -3,6 +3,9 @@
 @import './retail.css';
 @import './cash-modules.css';
 @import './cash-details.css';
+@import './purchases.css';
+@import './sales-details.css';
+@import './sales-delete.css';
 
 .login-form > .eyebrow { margin: 0 0 7px; }
 .login-form > p:not(.eyebrow) { margin: 7px 0 20px; }
