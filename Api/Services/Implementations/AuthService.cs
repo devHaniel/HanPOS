@@ -1,6 +1,7 @@
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -131,6 +132,7 @@ namespace Api.Services.Implementations
                 Id = usuario.Id,
                 Nombre = usuario.Nombre,
                 Username = usuario.UserName!,
+                Role = (await _userManager.GetRolesAsync(usuario)).FirstOrDefault(),
                 PasswordHash = string.Empty, // No devolver el hash
                 Activo = usuario.Activo
             };
@@ -156,6 +158,7 @@ namespace Api.Services.Implementations
                     Id = usuario.Id,
                     Nombre = usuario.Nombre,
                     Username = usuario.UserName!,
+                    Role = roles.FirstOrDefault(),
                     PasswordHash = string.Empty,
                     Activo = usuario.Activo
                 }

@@ -11,6 +11,8 @@ namespace Api.Models.Entities
 
         public string Nombre { get; set; } = null!;
 
+        public string? Descripcion { get; set; }
+
         public bool Activo { get; set; } = true;
 
         public ICollection<Producto> Productos { get; set; }

@@ -18,6 +18,8 @@ namespace Api.DTOs.Usuario
         [MaxLength(50)]
         public string Username { get; set; } = null!;
 
+        public string? Role { get; set; }
+
         [Required]
         [MaxLength(256)]
         public string PasswordHash { get; set; } = null!;

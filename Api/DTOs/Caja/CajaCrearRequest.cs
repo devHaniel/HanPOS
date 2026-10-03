@@ -8,7 +8,7 @@ namespace Api.DTOs.Caja
     /// </summary>
     public class CajaCrearRequest
     {
-        public DateTime FechaApertura { get; set; } = DateTime.Now;
+        public DateTime FechaApertura { get; set; } = DateTime.UtcNow;
 
         [Range(0, double.MaxValue)]
         public decimal MontoInicial { get; set; } = 0;

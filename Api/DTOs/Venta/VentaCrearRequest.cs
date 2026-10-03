@@ -12,7 +12,7 @@ namespace Api.DTOs.Venta
     /// </summary>
     public class VentaCrearRequest
     {
-        public DateTime Fecha { get; set; } = DateTime.Now;
+        public DateTime Fecha { get; set; } = DateTime.UtcNow;
 
         public int? MetodoPago { get; set; }
 

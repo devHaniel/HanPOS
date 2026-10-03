@@ -16,6 +16,9 @@ namespace Api.Data.Configurations
                 .IsRequired()
                 .HasMaxLength(80);
 
+            builder.Property(c => c.Descripcion)
+                .HasMaxLength(250);
+
             builder.Property(c => c.Activo)
                 .IsRequired();
 

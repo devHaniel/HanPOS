@@ -46,6 +46,7 @@ namespace Api.Services.Implementations
             var categoria = new Categoria
             {
                 Nombre = dto.Nombre,
+                Descripcion = dto.Descripcion,
                 Activo = dto.Activo
             };
 
@@ -61,6 +62,7 @@ namespace Api.Services.Implementations
             if (existente == null) return null;
 
             existente.Nombre = dto.Nombre;
+            existente.Descripcion = dto.Descripcion;
             existente.Activo = dto.Activo;
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -84,6 +86,7 @@ namespace Api.Services.Implementations
             {
                 Id = categoria.Id,
                 Nombre = categoria.Nombre,
+                Descripcion = categoria.Descripcion,
                 Activo = categoria.Activo
             };
         }

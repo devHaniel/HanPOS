@@ -14,6 +14,9 @@ namespace Api.DTOs.Categoria
         [MaxLength(80)]
         public string Nombre { get; set; } = null!;
 
+        [MaxLength(250)]
+        public string? Descripcion { get; set; }
+
         public bool Activo { get; set; }
     }
 }

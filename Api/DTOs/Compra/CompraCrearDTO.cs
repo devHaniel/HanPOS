@@ -11,7 +11,7 @@ namespace Api.DTOs.Compra
     /// </summary>
     public class CompraCrearDTO
     {
-        public DateTime Fecha { get; set; } = DateTime.Now;
+        public DateTime Fecha { get; set; } = DateTime.UtcNow;
 
         public decimal Subtotal { get; set; } = 0;
 

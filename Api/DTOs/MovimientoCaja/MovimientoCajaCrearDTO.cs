@@ -15,7 +15,7 @@ namespace Api.DTOs.MovimientoCaja
         [MaxLength(200)]
         public string? Concepto { get; set; }
 
-        public DateTime Fecha { get; set; } = DateTime.Now;
+        public DateTime Fecha { get; set; } = DateTime.UtcNow;
 
         public int CajaId { get; set; }
     }

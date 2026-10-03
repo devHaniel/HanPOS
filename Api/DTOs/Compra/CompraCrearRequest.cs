@@ -12,7 +12,7 @@ namespace Api.DTOs.Compra
     /// </summary>
     public class CompraCrearRequest
     {
-        public DateTime Fecha { get; set; } = DateTime.Now;
+        public DateTime Fecha { get; set; } = DateTime.UtcNow;
 
         public int Estado { get; set; } = 1; // Completada por defecto
 
