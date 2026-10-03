@@ -1,5 +1,9 @@
 # HanPOS
 
+<img width="330" height="230" alt="image" src="https://github.com/user-attachments/assets/2428d4ac-2280-4936-825f-3d1908eb48cb" />
+<img width="330" height="230" alt="image" src="https://github.com/user-attachments/assets/c3738aba-4d52-4a84-90a0-cc766a351363" />
+<img width="330" height="230" alt="image" src="https://github.com/user-attachments/assets/ca20bba8-2aba-43ce-a3e3-a785690dcd1e" />
+
 ### Cada venta en orden. Cada turno bajo control.
 
 MercaPOS es un punto de venta pensado para pequeñas tiendas y comercios que necesitan atender con agilidad y mantener sus operaciones claras. Reúne ventas, productos, clientes y control de caja en una interfaz directa, fácil de entender para el equipo del mostrador.
