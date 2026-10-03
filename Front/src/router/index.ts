@@ -21,7 +21,6 @@ const router = createRouter({
         { path: 'cash-register', name: 'cash-register', component: () => import('../views/CashRegisterView.vue'), meta: { title: 'Caja' } },
         { path: 'movements', name: 'movements', component: () => import('../views/CashMovementsView.vue'), meta: { title: 'Movimientos' } },
         { path: 'settings', name: 'settings', component: () => import('../views/SettingsView.vue'), meta: { title: 'Configuración' } },
-        { path: 'component-library', name: 'component-library', component: () => import('../views/ComponentLibraryView.vue'), meta: { title: 'Biblioteca de componentes' } },
       ],
     },
     { path: '/login', name: 'login', component: () => import('../views/LoginView.vue'), meta: { public: true, title: 'Iniciar sesión' } },

@@ -16,7 +16,6 @@ function savePreferences() { saved.value = true }
       <section class="panel"><div class="panel-header"><div class="settings-title"><span class="settings-icon"><Bell :size="17"/></span><div><h2>Preferencias de pantalla</h2><p>Controles visuales de la terminal.</p></div></div></div>
         <div class="settings-options"><label class="settings-option"><span><strong>Confirmar antes de quitar productos</strong><small>Evita retirar líneas del carrito por accidente.</small></span><input type="checkbox" checked /></label><label class="settings-option"><span><strong>Mostrar existencias en el catálogo</strong><small>Consulta el stock disponible al vender.</small></span><input type="checkbox" checked /></label></div>
       </section>
-      <RouterLink class="settings-library-card" to="/component-library"><span class="settings-icon"><Component :size="18"/></span><span><strong>Biblioteca de componentes</strong><small>Botones, campos, estados y piezas del POS</small></span><ArrowRight :size="17"/></RouterLink>
     </div>
   </section>
 </template>

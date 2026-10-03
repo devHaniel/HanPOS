@@ -32,7 +32,6 @@ onUnmounted(() => window.removeEventListener('auth:expired', onAuthExpired))
       <RouterLink to="/pos" class="pos-brand" @click="mobileOpen = false"><span class="pos-brand-mark">M</span><span><strong>HanPOS</strong><small>Venta rápida</small></span></RouterLink>
       <p class="pos-nav-label">Menú principal</p>
       <nav class="pos-nav" aria-label="Navegación principal"><RouterLink v-for="item in navigation" :key="item.to" :to="item.to" class="pos-nav-link" :class="{ active: isActive(item.to) }" @click="mobileOpen = false"><component :is="item.icon" class="pos-nav-icon" :size="18" :stroke-width="1.8"/><span>{{ item.label }}</span></RouterLink></nav>
-      <RouterLink class="pos-library-link" to="/component-library" @click="mobileOpen = false"><LayoutGrid :size="16"/> Biblioteca de componentes</RouterLink>
       <div class="pos-sidebar-footer"><span class="user-avatar">{{ (auth.user?.nombre || auth.user?.username || 'U').slice(0,1).toUpperCase() }}</span><span><strong>{{ auth.user?.nombre || auth.user?.username || 'Usuario' }}</strong><small>Sesión activa</small></span></div>
     </aside>
     <div class="pos-main">

@@ -20,9 +20,9 @@ async function submit() {
 </script>
 <template>
   <main class="login-screen">
-    <section class="login-art"><RouterLink to="/login" class="pos-brand"><span class="pos-brand-mark">M</span><span><strong>MercaPOS</strong><small>Gestión de ventas</small></span></RouterLink><div class="login-art-copy"><p class="eyebrow" style="color:#b9e773">Punto de venta</p><h1>Tu operación, en orden.</h1><p>Ventas, inventario y caja en un solo lugar, listos para el ritmo del mostrador.</p></div><div class="login-art-footer">Acceso seguro para el equipo de trabajo</div></section>
+    <section class="login-art"><RouterLink to="/login" class="pos-brand"><span class="pos-brand-mark">M</span><span><strong>HanPOS</strong><small>Gestión de ventas</small></span></RouterLink><div class="login-art-copy"><p class="eyebrow" style="color:#b9e773">Punto de venta</p><h1>Tu operación, en orden.</h1><p>Ventas, inventario y caja en un solo lugar, listos para el ritmo del mostrador.</p></div><div class="login-art-footer">Acceso seguro para el equipo de trabajo</div></section>
     <section class="login-form-side">
-      <RouterLink to="/login" class="login-mobile-brand"><span class="pos-brand-mark">M</span><span><strong>MercaPOS</strong><small>Venta rápida</small></span></RouterLink>
+      <RouterLink to="/login" class="login-mobile-brand"><span class="pos-brand-mark">M</span><span><strong>HanPOS</strong><small>Venta rápida</small></span></RouterLink>
       <form class="login-form" @submit.prevent="submit">
         <p class="eyebrow">Acceso al sistema</p><h2>Iniciar sesión</h2><p>Ingresa tus datos para continuar.</p>
         <label class="form-field" for="username">Usuario<div class="login-input-wrap"><Store :size="16"/><input id="username" v-model="username" autocomplete="username" required maxlength="50" placeholder="Tu usuario" /></div></label>
