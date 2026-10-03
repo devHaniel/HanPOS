@@ -37,10 +37,17 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function initializeAuth(): Promise<void> {
-    if (!apiClient.hasAccessToken) return
-    await runAuth(async () => {
+    if (!apiClient.hasAccessToken && !apiClient.refreshToken) return
+    isLoading.value = true
+    error.value = null
+    try {
       user.value = await authService.getCurrentUser()
-    })
+    } catch {
+      authService.logout()
+      user.value = null
+    } finally {
+      isLoading.value = false
+    }
   }
 
   async function changePassword(request: ChangePasswordRequest): Promise<void> {

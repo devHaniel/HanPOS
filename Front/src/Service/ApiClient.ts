@@ -1,7 +1,10 @@
 import type { AuthResponse } from '@/Type/Auth'
 import type { PageQuery, ProblemDetails } from '@/Type/Common'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5212/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api'
+const ACCESS_TOKEN_KEY = 'hanpos.accessToken'
+const REFRESH_TOKEN_KEY = 'hanpos.refreshToken'
+const ACCESS_TOKEN_EXPIRATION_KEY = 'hanpos.accessTokenExpiration'
 
 export class ApiError extends Error {
   constructor(
@@ -23,6 +26,18 @@ export class ApiClient {
   private accessTokenExpiresAt: number | null = null
   private refreshInFlight: Promise<void> | null = null
 
+  constructor() {
+    if (typeof window === 'undefined') return
+    try {
+      this.accessToken = window.sessionStorage.getItem(ACCESS_TOKEN_KEY)
+      this.refreshTokenValue = window.sessionStorage.getItem(REFRESH_TOKEN_KEY)
+      const expiration = Number(window.sessionStorage.getItem(ACCESS_TOKEN_EXPIRATION_KEY))
+      this.accessTokenExpiresAt = Number.isFinite(expiration) && expiration > 0 ? expiration : null
+    } catch {
+      // Authentication remains in memory if browser storage is unavailable.
+    }
+  }
+
   get hasAccessToken(): boolean {
     return this.accessToken !== null
   }
@@ -40,12 +55,34 @@ export class ApiClient {
     this.refreshTokenValue = refreshToken
     const parsedExpiration = expiration ? Date.parse(expiration) : Number.NaN
     this.accessTokenExpiresAt = Number.isFinite(parsedExpiration) ? parsedExpiration : null
+    if (typeof window !== 'undefined') {
+      try {
+        window.sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken)
+        window.sessionStorage.setItem(REFRESH_TOKEN_KEY, refreshToken)
+        if (this.accessTokenExpiresAt !== null) {
+          window.sessionStorage.setItem(ACCESS_TOKEN_EXPIRATION_KEY, String(this.accessTokenExpiresAt))
+        } else {
+          window.sessionStorage.removeItem(ACCESS_TOKEN_EXPIRATION_KEY)
+        }
+      } catch {
+        // Keep the in-memory session when browser storage is unavailable.
+      }
+    }
   }
 
   clearTokens(): void {
     this.accessToken = null
     this.refreshTokenValue = null
     this.accessTokenExpiresAt = null
+    if (typeof window !== 'undefined') {
+      try {
+        window.sessionStorage.removeItem(ACCESS_TOKEN_KEY)
+        window.sessionStorage.removeItem(REFRESH_TOKEN_KEY)
+        window.sessionStorage.removeItem(ACCESS_TOKEN_EXPIRATION_KEY)
+      } catch {
+        // In-memory state is still cleared when browser storage is unavailable.
+      }
+    }
   }
 
   async get<T>(path: string, query?: QueryParams): Promise<T> {
@@ -143,7 +180,7 @@ export class ApiClient {
   }
 
   private shouldRefreshAccessToken(): boolean {
-    return this.accessTokenExpiresAt !== null && this.accessTokenExpiresAt <= Date.now() + 30_000
+    return !this.accessToken || (this.accessTokenExpiresAt !== null && this.accessTokenExpiresAt <= Date.now() + 30_000)
   }
 
   private expireSession(): void {
