@@ -1,35 +1,25 @@
 @import './base.css';
+@import './pos.css';
+@import './retail.css';
+@import './cash-modules.css';
+@import './cash-details.css';
 
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  font-weight: normal;
-}
+.login-form > .eyebrow { margin: 0 0 7px; }
+.login-form > p:not(.eyebrow) { margin: 7px 0 20px; }
+.login-form .form-field { margin-bottom: 11px; }
+.login-form h2 { font-size: 23px; }
+.login-form .btn { min-height: 41px; margin-top: 3px; }
 
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
-}
-
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
-}
-
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
-
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
+@media (max-height: 500px) and (min-width: 561px) {
+	.login-form-side { padding: 12px; }
+	.login-form { padding: 16px 22px; }
+	.login-form h2 { font-size: 19px; }
+	.login-form > p:not(.eyebrow) { margin: 4px 0 10px; }
+	.login-form .form-field { margin-bottom: 7px; }
+	.login-input-wrap { min-height: 35px; }
+	.login-recovery-row { margin: -2px 0 7px; }
+	.login-form .btn { min-height: 37px; margin-top: 0; }
+	.login-art { padding: 20px 28px; }
+	.login-art-copy h1 { font-size: 30px; }
+	.login-art-copy p { margin-top: 10px; font-size: 11px; }
 }
