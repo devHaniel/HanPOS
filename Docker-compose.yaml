@@ -1,5 +1,16 @@
 services:
-
+  frontend:
+    build:
+      context: ./Front
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    depends_on:
+      - api
+      
   api:
     build:
       context: ./Api
@@ -11,14 +22,20 @@ services:
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
-      JwtSettings__SecretKey: ${JWT_SECRET_KEY:-PosSystemSecretKey2024!@#$%^&*()_+={}[]|\\:;\"'<>,.?/}
-      JwtSettings__Issuer: PosApi
-      JwtSettings__Audience: PosClient
-      JwtSettings__ExpirationMinutes: 60
-      JwtSettings__RefreshTokenDays: 7
+      Jwt__Key: ${JWT_SECRET_KEY:-PosSystemSecretKey2024!@#$%^&*()_+={}[]|\\:;\"'<>,.?/}
+      Jwt__Issuer: PosApi
+      Jwt__Audience: PosClient
+      Jwt__AccessTokenMinutes: 60
+      Jwt__RefreshTokenDays: 7
     depends_on:
       postgres:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
       
   postgres:
     image: postgres:16-alpine
@@ -37,6 +54,14 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
+    deploy:
+     resources:
+      limits:
+        cpus: "1.0"
+        memory: 1G
+      reservations:
+        cpus: "0.25"
+        memory: 256M
 
 volumes:
   postgres_data:
