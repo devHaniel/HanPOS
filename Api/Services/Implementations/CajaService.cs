@@ -83,7 +83,44 @@ namespace Api.Services.Implementations
             var caja = await _repository.GetAbiertaAsync(cancellationToken);
             if (caja == null || caja.Id != id) return null;
 
+            // Obtener todos los movimientos de la caja
+            var movimientos = await _movimientoRepository.GetPorCajaAsync(caja.Id, cancellationToken);
+
+            // Acumular montos por categoría
+            decimal totalVentas = 0;
+            decimal totalCompras = 0;
+            decimal otrosIngresos = 0;
+            decimal otrosEgresos = 0;
+
+            foreach (var mov in movimientos)
+            {
+                var concepto = mov.Concepto ?? string.Empty;
+                var esVenta = concepto.StartsWith("Venta #", StringComparison.OrdinalIgnoreCase);
+                var esCompra = concepto.StartsWith("Compra #", StringComparison.OrdinalIgnoreCase);
+
+                if (mov.Tipo == TipoMovimiento.Ingreso)
+                {
+                    if (esVenta)
+                        totalVentas += mov.Monto;
+                    else
+                        otrosIngresos += mov.Monto;
+                }
+                else if (mov.Tipo == TipoMovimiento.Egreso)
+                {
+                    if (esCompra)
+                        totalCompras += mov.Monto;
+                    else
+                        otrosEgresos += mov.Monto;
+                }
+            }
+
+            decimal totalIngresos = totalVentas + otrosIngresos;
+            decimal totalEgresos = totalCompras + otrosEgresos;
+            decimal montoFinal = caja.MontoInicial + totalIngresos - totalEgresos;
+
+            // Asignar valores calculados a la caja
             caja.FechaCierre = DateTime.UtcNow;
+            caja.MontoFinal = montoFinal;
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

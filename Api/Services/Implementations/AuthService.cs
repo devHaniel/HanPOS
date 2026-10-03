@@ -167,8 +167,7 @@ namespace Api.Services.Implementations
 
         private int GetTokenExpirationMinutes()
         {
-            var jwtSettings = _configuration.GetSection("JwtSettings");
-            return int.TryParse(jwtSettings["ExpirationMinutes"], out var minutes) ? minutes : 60;
+            return _configuration.GetValue<int>("Jwt:AccessTokenMinutes", 60);
         }
     }
 }

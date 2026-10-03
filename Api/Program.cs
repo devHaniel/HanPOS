@@ -37,7 +37,8 @@ builder.Services.AddCors(options =>
                 "http://localhost:4200",   // Angular default
                 "https://localhost:3000",
                 "https://localhost:5173",
-                "https://localhost:4200"
+                "http://localhost:8080",
+                "http://localhost:80"
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
@@ -114,8 +115,9 @@ builder.Services.AddIdentity<Usuario, IdentityRole<int>>(options =>
 .AddDefaultTokenProviders();
 
 // Add JWT Authentication
-var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = jwtSettings["SecretKey"]!;
+var secretKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key not configured");
+var issuer = builder.Configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("Jwt:Issuer not configured");
+var audience = builder.Configuration["Jwt:Audience"] ?? throw new InvalidOperationException("Jwt:Audience not configured");
 
 builder.Services.AddAuthentication(options =>
 {
@@ -130,8 +132,8 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSettings["Issuer"],
-        ValidAudience = jwtSettings["Audience"],
+        ValidIssuer = issuer,
+        ValidAudience = audience,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
         ClockSkew = TimeSpan.Zero
     };

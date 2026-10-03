@@ -18,5 +18,6 @@ WORKDIR /app
 COPY --from=build /app/publish .
 EXPOSE 8080
 EXPOSE 8081
+EXPOSE 80
 
 ENTRYPOINT ["dotnet", "Api.dll"]
