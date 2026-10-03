@@ -45,43 +45,6 @@ El flujo de venta muestra subtotal, impuesto, total y, al pagar en efectivo, el 
 - Node.js `22.18+` o `24.12+` para el frontend.
 - .NET SDK 10 para ejecutar la API localmente.
 
-## Puesta en marcha con Docker
-
-1. Crea un archivo `.env` en la raíz del proyecto. No lo publiques ni lo incluyas en commits.
-
-```dotenv
-POSTGRES_DB=mercapos
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=cambia-esta-clave
-JWT_SECRET_KEY=reemplaza-por-un-secreto-aleatorio-de-al-menos-32-caracteres
-```
-
-Puedes generar un secreto con `openssl rand -base64 48`. Usa valores propios para tu entorno.
-
-2. Inicia la API y PostgreSQL:
-
-```bash
-docker compose up --build -d
-```
-
-3. Configura el frontend en `Front/.env`:
-
-```dotenv
-VITE_API_BASE_URL=http://localhost:8080/api
-```
-
-4. Instala y ejecuta el frontend:
-
-```bash
-cd Front
-npm install
-npm run dev
-```
-
-Abre `http://localhost:5173`. La API estará disponible en `http://localhost:8080`; el estado de salud está en `/health`.
-
-El contenedor de API aplica las migraciones pendientes al iniciar. Swagger se habilita solo en entorno de desarrollo.
-
 ## Ejecución local de la API
 
 Si ejecutas la API fuera de Docker, primero configura una instancia de PostgreSQL accesible desde tu equipo y guarda la cadena de conexión y el secreto JWT en User Secrets o variables de entorno. No guardes credenciales en archivos que vayas a publicar.
