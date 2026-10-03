@@ -174,6 +174,27 @@ namespace Api.Services.Implementations
             var venta = await _ventaRepository.GetWithDetailsAndClienteAsync(id, cancellationToken);
             if (venta == null) return false;
 
+            foreach (var detalle in venta.Detalles)
+            {
+                var producto = detalle.Producto ?? await _productoRepostory.GetByIdAsync(detalle.ProductoId, cancellationToken);
+                if (producto == null)
+                    throw new InvalidOperationException($"No se pudo restaurar el inventario del producto {detalle.ProductoId}.");
+
+                producto.Stock += detalle.Cantidad;
+            }
+
+            if (venta.MetodoPago == MetodoPago.Efectivo)
+            {
+                await _movimientoRepository.AddAsync(new MovimientoCaja
+                {
+                    CajaId = venta.CajaId,
+                    Monto = venta.Total,
+                    Tipo = TipoMovimiento.Egreso,
+                    Concepto = $"Reverso de venta #{venta.Id}",
+                    Fecha = DateTime.UtcNow
+                }, cancellationToken);
+            }
+
             await _ventaRepository.RemoveAsync(venta, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return true;
