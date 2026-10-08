@@ -23,4 +23,6 @@ export interface ProductRequest {
   categoriaId?: number | null
 }
 
-export interface ProductQuery extends PageQuery {}
+export interface ProductQuery extends PageQuery {
+  termino?: string
+}

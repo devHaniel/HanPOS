@@ -10,6 +10,9 @@ export const productService = {
   list(query?: ProductQuery) {
     return apiClient.get<PagedResult<Product>>('/producto/activos', query)
   },
+  search(query?: ProductQuery) {
+    return apiClient.get<PagedResult<Product>>('/producto/buscar', query)
+  },
   getByCode(code: string) {
     return apiClient.get<Product>(`/producto/codigo/${encodeURIComponent(code)}`)
   },

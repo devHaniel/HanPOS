@@ -16,6 +16,9 @@ export const saleService = {
   getByUser(userId: number) {
     return apiClient.get<Sale[]>(`/venta/por-usuario/${userId}`)
   },
+  getByCashRegister(cajaId: number) {
+    return apiClient.get<Sale[]>(`/venta/por-caja/${cajaId}`)
+  },
   getDetails(saleId: number) {
     return apiClient.get<SaleDetail[]>(`/venta/${saleId}/detalles`)
   },

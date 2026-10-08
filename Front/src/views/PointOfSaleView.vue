@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { ArrowRight, Banknote, Check, CreditCard, Minus, Package, Plus, Search, ShoppingCart, Tag, Trash2, UserRound, X } from '@lucide/vue'
+import { ArrowRight, Banknote, Check, CreditCard, Minus, Package, Plus, Search, ShoppingCart, Tag, Trash2, UserRound, X, Printer } from '@lucide/vue'
 import { cashRegisterService, categoryService, clientService, saleService } from '@/Service'
 import { useAuthStore, useProductStore } from '@/Store'
 import type { CashRegister } from '@/Type/CashRegister'
@@ -24,8 +24,17 @@ const selectedClientId = ref<number | null>(null)
 const paymentMethod = ref<1 | 2 | 3>(1)
 const cashReceived = ref(0)
 const checkoutStep = ref<CheckoutStep>(null)
-const saleCompletedTotal = ref(0)
-const saleChange = ref(0)
+const lastSale = ref<{
+  id: number
+  total: number
+  change: number
+  items: CartEntry[]
+  paymentMethod: 1 | 2 | 3
+  clientName: string
+  date: string
+  subtotal: number
+  tax: number
+} | null>(null)
 const busy = ref(false)
 const error = ref('')
 const notice = ref('')
@@ -37,9 +46,10 @@ const filteredProducts = computed(() => products.value.filter((product) => {
 }))
 const itemCount = computed(() => cart.value.reduce((sum, entry) => sum + entry.quantity, 0))
 const subtotal = computed(() => cart.value.reduce((sum, entry) => sum + entry.product.precioVenta * entry.quantity, 0))
-const tax = computed(() => subtotal.value * 0.15)
+// Los precios ya incluyen IVA 15%. El impuesto es la parte del subtotal que corresponde al IVA.
+const tax = computed(() => Math.round(subtotal.value * 0.15 / 1.15 * 100) / 100)
 const discount = computed(() => 0)
-const total = computed(() => subtotal.value + tax.value - discount.value)
+const total = computed(() => subtotal.value)
 const change = computed(() => Math.max(0, cashReceived.value - total.value))
 const currency = (amount: number) => new Intl.NumberFormat('es-HN', { style: 'currency', currency: 'HNL' }).format(amount)
 
@@ -90,8 +100,21 @@ async function completeSale() {
       metodoPago: paymentMethod.value,
       detalles: cart.value.map(({ product, quantity }) => ({ productoId: product.id, cantidad: quantity })),
     })
-    saleCompletedTotal.value = completed.total
-    saleChange.value = paymentMethod.value === 1 ? Math.max(0, cashReceived.value - completed.total) : 0
+    
+    const client = clients.value.find(c => c.id === selectedClientId.value)
+    
+    lastSale.value = {
+      id: completed.id,
+      total: completed.total,
+      change: paymentMethod.value === 1 ? Math.max(0, cashReceived.value - completed.total) : 0,
+      items: [...cart.value],
+      paymentMethod: paymentMethod.value,
+      clientName: client?.nombre || 'Cliente ocasional',
+      date: new Date().toLocaleString('es-HN', { dateStyle: 'short', timeStyle: 'short' }),
+      subtotal: subtotal.value,
+      tax: tax.value
+    }
+    
     checkoutStep.value = 'success'
     await load()
   } catch (cause) {
@@ -109,10 +132,131 @@ function newSale() {
   cashReceived.value = 0
   paymentMethod.value = 1
   checkoutStep.value = null
+  lastSale.value = null
+}
+
+function generateReceipt(): string {
+  if (!lastSale.value) return ''
+  
+  const W = 42 // thermal width in characters
+  const sale = lastSale.value
+  const nl = '\n'
+  const hr = '='.repeat(W)
+  const dr = '-'.repeat(W)
+  const center = (text: string) => text.padStart((W + text.length) / 2).padEnd(W)
+  const right = (text: string) => text.padStart(W)
+  const left = (text: string) => text.padEnd(W)
+  const lr = (l: string, r: string) => l.padEnd(W - r.length) + r
+  
+  const paymentLabel = sale.paymentMethod === 1 ? 'EFECTIVO' : sale.paymentMethod === 2 ? 'TARJETA' : 'TRANSFERENCIA'
+  
+  let out = ''
+  
+  // Header
+  out += center('HANPOS') + nl
+  out += center('Sistema de Ventas') + nl
+  out += hr + nl
+  out += center('TICKET DE VENTA') + nl
+  out += hr + nl
+  
+  // Info
+  out += left(`Venta #${sale.id.toString().padStart(6, '0')}`) + nl
+  out += left(`Fecha: ${sale.date}`) + nl
+  out += left(`Cajero: ${auth.user?.nombre || 'Usuario'}`) + nl
+  out += left(`Cliente: ${sale.clientName}`) + nl
+  out += dr + nl
+  
+  // Items header
+  out += left('DESCRIPCION        CANT  PRECIO  IMPORTE') + nl
+  out += dr + nl
+  
+  // Items
+  for (const line of sale.items) {
+    const name = line.product.nombre.substring(0, 18).padEnd(18)
+    const qty = line.quantity.toString().padStart(4)
+    const price = currency(line.product.precioVenta).padStart(7)
+    const importe = currency(line.product.precioVenta * line.quantity).padStart(8)
+    out += `${name}${qty}${price}${importe}` + nl
+  }
+  
+  out += dr + nl
+  
+  // Totals
+  out += lr('SUBTOTAL:', currency(sale.subtotal)) + nl
+  out += lr('DESCUENTO:', currency(0)) + nl
+  out += lr('IMPUESTO (15%):', currency(sale.tax)) + nl
+  out += hr + nl
+  out += lr('TOTAL:', currency(sale.total)) + nl
+  out += hr + nl
+  
+  // Payment
+  out += left(`PAGO: ${paymentLabel}`) + nl
+  if (sale.paymentMethod === 1) {
+    out += lr('RECIBIDO:', currency(sale.total + sale.change)) + nl
+    out += lr('CAMBIO:', currency(sale.change)) + nl
+  }
+  out += hr + nl
+  
+  // Footer
+  out += center('¡GRACIAS POR SU COMPRA!') + nl
+  out += center('Vuelva pronto') + nl
+  out += hr + nl
+  out += center('www.hanpos.com') + nl
+  
+  return out
 }
 
 function printReceipt() {
-  window.print()
+  if (!lastSale.value) return
+  
+  const receipt = generateReceipt()
+  const printWindow = window.open('', '_blank', 'width=400,height=600')
+  if (!printWindow) return
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Ticket Venta #${lastSale.value.id}</title>
+      <style>
+        @media print {
+          @page { margin: 0; size: 80mm auto; }
+          body { margin: 0; padding: 8px; }
+          .no-print { display: none; }
+        }
+        body { 
+          font-family: 'Courier New', 'Consolas', 'Monospace', monospace; 
+          font-size: 11px; 
+          line-height: 1.3;
+          white-space: pre-wrap;
+          padding: 8px;
+          max-width: 320px;
+          margin: 0 auto;
+        }
+        .print-btn { 
+          display: block; 
+          margin: 16px auto 0; 
+          padding: 12px 24px; 
+          background: #2563eb; 
+          color: white; 
+          border: none; 
+          border-radius: 6px; 
+          font-size: 14px; 
+          cursor: pointer;
+        }
+        .print-btn:hover { background: #1d4ed8; }
+      </style>
+    </head>
+    <body onload="window.print()">
+      ${receipt}
+      <button class="print-btn no-print" onclick="window.print()">Imprimir / Guardar PDF</button>
+      <scr` + `ipt>setTimeout(() => window.close(), 10000)</scr` + `ipt>
+    </body>
+    </html>
+  `
+  printWindow.document.write(html)
+  printWindow.document.close()
 }
 
 async function load() {
@@ -220,8 +364,11 @@ onMounted(load)
     <div v-if="checkoutStep === 'success'" class="dialog-backdrop success-backdrop">
       <section class="checkout-dialog success-dialog" role="dialog" aria-modal="true" aria-labelledby="success-title">
         <div class="success-mark"><Check :size="29" :stroke-width="2.3"/></div><p class="dialog-step-label">TRANSACCIÓN REGISTRADA</p><h2 id="success-title">Venta completada</h2><p class="success-copy">El cobro se registró correctamente.</p>
-        <div class="success-total"><span>Total</span><strong>{{ currency(saleCompletedTotal) }}</strong></div><div v-if="paymentMethod === 1" class="success-change"><span>Cambio</span><strong>{{ currency(saleChange) }}</strong></div>
-        <div class="success-actions"><button class="btn btn-secondary" @click="printReceipt">Imprimir comprobante</button><button class="btn btn-success" @click="newSale">Nueva venta</button></div>
+        <div class="success-total"><span>Total</span><strong>{{ currency(lastSale?.total ?? 0) }}</strong></div><div v-if="paymentMethod === 1" class="success-change"><span>Cambio</span><strong>{{ currency(lastSale?.change ?? 0) }}</strong></div>
+        <div class="success-actions">
+          <button class="btn btn-secondary" @click="printReceipt"><Printer :size="16"/> Imprimir ticket</button>
+          <button class="btn btn-success" @click="newSale">Nueva venta</button>
+        </div>
       </section>
     </div>
   </section>

@@ -16,6 +16,9 @@ export const purchaseService = {
   getByProvider(providerId: number) {
     return apiClient.get<Purchase[]>(`/compra/por-proveedor/${providerId}`)
   },
+  getByCashRegister(cajaId: number) {
+    return apiClient.get<Purchase[]>(`/compra/por-caja/${cajaId}`)
+  },
   getDetails(purchaseId: number) {
     return apiClient.get<PurchaseDetail[]>(`/compra/${purchaseId}/detalles`)
   },

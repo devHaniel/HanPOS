@@ -19,6 +19,7 @@ const router = createRouter({
         { path: 'sales', name: 'sales', component: () => import('../views/SalesHistoryView.vue'), meta: { title: 'Ventas' } },
         { path: 'purchases', name: 'purchases', component: () => import('../views/PurchasesView.vue'), meta: { title: 'Compras' } },
         { path: 'cash-register', name: 'cash-register', component: () => import('../views/CashRegisterView.vue'), meta: { title: 'Caja' } },
+        { path: 'cash-history', name: 'cash-history', component: () => import('../views/CashRegisterHistoryView.vue'), meta: { title: 'Historial de Cajas' } },
         { path: 'movements', name: 'movements', component: () => import('../views/CashMovementsView.vue'), meta: { title: 'Movimientos' } },
         { path: 'settings', name: 'settings', component: () => import('../views/SettingsView.vue'), meta: { title: 'Configuración' } },
       ],
