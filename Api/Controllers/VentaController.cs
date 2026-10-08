@@ -94,6 +94,19 @@ namespace Api.Controllers
         }
 
         /// <summary>
+        /// Gets sales by cash register. (Admin, Vendedor)
+        /// </summary>
+        [HttpGet("por-caja/{cajaId}")]
+        [Authorize(Roles = "Admin,Vendedor")]
+        public async Task<ActionResult<IReadOnlyList<VentaResponseDto>>> GetPorCaja(
+            int cajaId,
+            CancellationToken cancellationToken = default)
+        {
+            var ventas = await _ventaService.GetPorCajaAsync(cajaId, cancellationToken);
+            return Ok(ventas);
+        }
+
+        /// <summary>
         /// Creates a new sale. (Admin, Vendedor)
         /// </summary>
         [HttpPost]

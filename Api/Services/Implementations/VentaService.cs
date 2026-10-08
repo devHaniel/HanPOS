@@ -200,6 +200,12 @@ namespace Api.Services.Implementations
             return true;
         }
 
+        public async Task<IReadOnlyList<VentaResponseDto>> GetPorCajaAsync(int cajaId, CancellationToken cancellationToken = default)
+        {
+            var all = await _ventaRepository.GetAllAsync(cancellationToken);
+            return all.Where(v => v.CajaId == cajaId).Select(MapToDTO).ToList().AsReadOnly();
+        }
+
         private async Task ValidarVentaAsync(Venta venta, CancellationToken cancellationToken)
         {
             if (venta.Detalles == null || !venta.Detalles.Any())
@@ -252,17 +258,23 @@ namespace Api.Services.Implementations
 
         private void CalcularTotales(Venta venta)
         {
-            decimal subtotal = 0;
+            decimal subtotalConImpuesto = 0;
 
             foreach (var detalle in venta.Detalles)
             {
                 detalle.Subtotal = detalle.Cantidad * detalle.PrecioUnitario;
-                subtotal += detalle.Subtotal;
+                subtotalConImpuesto += detalle.Subtotal;
             }
 
-            venta.Subtotal = subtotal;
-            venta.Impuesto = subtotal * 0.15m;
-            venta.Total = venta.Subtotal + venta.Impuesto;
+            // Los precios ya incluyen el 15% de impuesto (IVA)
+            // Subtotal = monto con impuesto incluido
+            // Impuesto = parte del subtotal que corresponde al IVA
+            // Total = Subtotal (ya que el impuesto está incluido)
+            const decimal tasaImpuesto = 0.15m;
+            
+            venta.Subtotal = subtotalConImpuesto;
+            venta.Impuesto = Math.Round(subtotalConImpuesto * tasaImpuesto / (1 + tasaImpuesto), 2);
+            venta.Total = venta.Subtotal;
         }
 
         private static VentaResponseDto MapToDTO(Venta venta)

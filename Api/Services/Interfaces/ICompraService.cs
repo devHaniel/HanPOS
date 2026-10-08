@@ -39,5 +39,8 @@ namespace Api.Services.Interfaces
 
         // Eliminar compra
         Task<bool> EliminarAsync(int id, CancellationToken cancellationToken = default);
+
+        // Obtener compras por caja
+        Task<IReadOnlyList<CompraResponseDto>> GetPorCajaAsync(int cajaId, CancellationToken cancellationToken = default);
     }
 }

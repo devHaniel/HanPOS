@@ -32,6 +32,8 @@ namespace Api.Data
 
         public DbSet<MovimientoCaja> MovimientosCaja { get; set; }
 
+        public DbSet<Negocio> Negocios { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

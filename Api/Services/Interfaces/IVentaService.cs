@@ -39,5 +39,8 @@ namespace Api.Services.Interfaces
 
         // Eliminar venta
         Task<bool> EliminarAsync(int id, CancellationToken cancellationToken = default);
+
+        // Obtener ventas por caja
+        Task<IReadOnlyList<VentaResponseDto>> GetPorCajaAsync(int cajaId, CancellationToken cancellationToken = default);
     }
 }

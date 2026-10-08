@@ -56,6 +56,21 @@ namespace Api.Controllers
         }
 
         /// <summary>
+        /// Search products by name or code with pagination. (Admin, Vendedor)
+        /// </summary>
+        [HttpGet("buscar")]
+        [Authorize(Roles = "Admin,Vendedor")]
+        public async Task<ActionResult<PagedResult<ProductoResponseDto>>> Buscar(
+            string? termino = null,
+            int pagina = 1,
+            int cantidad = 20,
+            CancellationToken cancellationToken = default)
+        {
+            var result = await _productoService.BuscarAsync(termino, pagina, cantidad, cancellationToken);
+            return Ok(result);
+        }
+
+        /// <summary>
         /// Gets a product by code. (Admin, Vendedor)
         /// </summary>
         [HttpGet("codigo/{codigo}")]

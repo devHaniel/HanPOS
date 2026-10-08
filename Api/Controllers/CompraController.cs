@@ -94,6 +94,19 @@ namespace Api.Controllers
         }
 
         /// <summary>
+        /// Gets purchases by cash register. (Admin only)
+        /// </summary>
+        [HttpGet("por-caja/{cajaId}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<IReadOnlyList<CompraResponseDto>>> GetPorCaja(
+            int cajaId,
+            CancellationToken cancellationToken = default)
+        {
+            var compras = await _compraService.GetPorCajaAsync(cajaId, cancellationToken);
+            return Ok(compras);
+        }
+
+        /// <summary>
         /// Creates a new purchase. (Admin only)
         /// </summary>
         [HttpPost]

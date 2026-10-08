@@ -52,6 +52,18 @@ namespace Api.Services.Implementations
             };
         }
 
+        public async Task<PagedResult<ProductoResponseDto>> BuscarAsync(string? termino, int pagina = 1, int cantidad = 10, CancellationToken cancellationToken = default)
+        {
+            var (items, total) = await _productoRepository.BuscarPagedAsync(termino, pagina, cantidad, cancellationToken);
+            return new PagedResult<ProductoResponseDto>
+            {
+                Items = items.Select(MapToDTO).ToList(),
+                Pagina = pagina,
+                Cantidad = cantidad,
+                Total = total
+            };
+        }
+
         public async Task<ProductoResponseDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
             var producto = await _productoRepository.GetByIdAsync(id, cancellationToken);

@@ -18,6 +18,9 @@ namespace Api.Services.Interfaces
         // Obtener todos los productos activos con paginación
         Task<PagedResult<ProductoResponseDto>> GetActivosPagedAsync(int pagina = 1, int cantidad = 10, CancellationToken cancellationToken = default);
 
+        // Buscar productos por nombre o código con paginación
+        Task<PagedResult<ProductoResponseDto>> BuscarAsync(string? termino, int pagina = 1, int cantidad = 10, CancellationToken cancellationToken = default);
+
         // Obtener producto por ID
         Task<ProductoResponseDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 

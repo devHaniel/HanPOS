@@ -169,6 +169,12 @@ namespace Api.Services.Implementations
             return true;
         }
 
+        public async Task<IReadOnlyList<CompraResponseDto>> GetPorCajaAsync(int cajaId, CancellationToken cancellationToken = default)
+        {
+            var all = await _compraRepository.GetAllAsync(cancellationToken);
+            return all.Where(c => c.CajaId == cajaId).Select(MapToDTO).ToList().AsReadOnly();
+        }
+
         private async Task ValidarCompraAsync(Compra compra, CancellationToken cancellationToken)
         {
             if (compra.Detalles == null || !compra.Detalles.Any())

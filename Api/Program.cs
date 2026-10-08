@@ -154,6 +154,7 @@ builder.Services.AddScoped<IDetalleVentaRepository, DetalleVentaRepository>();
 builder.Services.AddScoped<IDetalleCompraRepository, DetalleCompraRepository>();
 builder.Services.AddScoped<ICajaRepository, CajaRepository>();
 builder.Services.AddScoped<IMovimientoCajaRepository, MovimientoCajaRepository>();
+builder.Services.AddScoped<INegocioRepository, NegocioRepository>();
 
 // Register Services
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
@@ -167,6 +168,7 @@ builder.Services.AddScoped<IVentaService, VentaService>();
 builder.Services.AddScoped<ICompraService, CompraService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<INegocioService, NegocioService>();
 
 // Background Services
 builder.Services.AddHostedService<RefreshTokenCleanupService>();
@@ -217,6 +219,37 @@ using (var scope = app.Services.CreateScope())
     }
 
 }
+
+// Ensure Negocio exists (auto-create first record as global business configuration)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var negocioExists = await db.Negocios.AnyAsync();
+    if (!negocioExists)
+    {
+        var negocio = new Negocio
+        {
+            Nombre = "Mi Negocio",
+            RazonSocial = "Mi Negocio S.A.C.",
+            IdentificacionFiscal = "20123456789",
+            Direccion = "Av. Principal 123, Lima, Perú",
+            Telefono = "+51 987 654 321",
+            Email = "contacto@minegocio.com",
+            MensajePieComprobante = "¡Gracias por su compra! Vuelva pronto.",
+            MonedaDefecto = "PEN",
+            SimboloMoneda = "S/",
+            ZonaHoraria = "America/Lima",
+            Activo = true,
+            FechaCreacion = DateTime.UtcNow,
+            FechaActualizacion = DateTime.UtcNow,
+            PreferenciasPantalla = "{\"compacto\":false,\"mostrarStock\":true,\"confirmarEliminacion\":true,\"temaOscuro\":false,\"sonidos\":true}",
+            ConfiguracionImpresion = "{\"anchoPapel\":80,\"margenes\":5,\"tamanoFuente\":12,\"copias\":1,\"cortarPapel\":true,\"abrirCajon\":true}"
+        };
+        db.Negocios.Add(negocio);
+        await db.SaveChangesAsync();
+    }
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

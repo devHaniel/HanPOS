@@ -86,6 +86,32 @@ namespace Api.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<(List<Producto> Items, int Total)> BuscarPagedAsync(
+            string? termino,
+            int pagina,
+            int cantidad,
+            CancellationToken cancellationToken = default)
+        {
+            var query = _context.Productos
+                .Where(p => p.Activo)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(termino))
+            {
+                var term = termino.Trim();
+                query = query.Where(p => p.Nombre.Contains(term) || p.Codigo.Contains(term));
+            }
+
+            var total = await query.CountAsync(cancellationToken);
+            var items = await query
+                .OrderBy(p => p.Nombre)
+                .Skip((pagina - 1) * cantidad)
+                .Take(cantidad)
+                .ToListAsync(cancellationToken);
+
+            return (items, total);
+        }
+
         public async Task<Producto> AddAsync(
             Producto producto,
             CancellationToken cancellationToken = default)

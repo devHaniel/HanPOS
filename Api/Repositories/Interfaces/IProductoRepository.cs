@@ -22,6 +22,13 @@ namespace Api.Repositories.Interfaces
             int cantidad,
             CancellationToken cancellationToken = default);
 
+        // Buscar productos por nombre o código con paginación
+        Task<(List<Producto> Items, int Total)> BuscarPagedAsync(
+            string? termino,
+            int pagina,
+            int cantidad,
+            CancellationToken cancellationToken = default);
+
         // Obtener producto por ID
         Task<Producto?> GetByIdAsync(
             int id,
