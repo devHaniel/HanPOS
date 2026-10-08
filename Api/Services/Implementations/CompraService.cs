@@ -221,17 +221,23 @@ namespace Api.Services.Implementations
 
         private void CalcularTotales(Compra compra)
         {
-            decimal subtotal = 0;
+            decimal subtotalConImpuesto = 0;
 
             foreach (var detalle in compra.Detalles)
             {
                 detalle.Subtotal = detalle.Cantidad * detalle.PrecioUnitario;
-                subtotal += detalle.Subtotal;
+                subtotalConImpuesto += detalle.Subtotal;
             }
 
-            compra.Subtotal = subtotal;
-            compra.Impuesto = subtotal * 0.15m;
-            compra.Total = compra.Subtotal + compra.Impuesto;
+            // Los precios ya incluyen el 15% de impuesto (IVA)
+            // Subtotal = monto con impuesto incluido
+            // Impuesto = parte del subtotal que corresponde al IVA
+            // Total = Subtotal (ya que el impuesto está incluido)
+            const decimal tasaImpuesto = 0.15m;
+
+            compra.Subtotal = subtotalConImpuesto;
+            compra.Impuesto = Math.Round(subtotalConImpuesto * tasaImpuesto / (1 + tasaImpuesto), 2);
+            compra.Total = compra.Subtotal;
         }
 
         private static CompraResponseDto MapToDTO(Compra compra)

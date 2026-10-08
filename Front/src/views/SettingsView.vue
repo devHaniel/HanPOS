@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, reactive } from 'vue'
 import { useNegocioStore } from '@/Store'
-import { Store, Save, Loader2, AlertCircle, Check, Shield, Palette, Printer } from '@lucide/vue'
+import { Store, Save, Loader2, AlertCircle, Check, Shield } from '@lucide/vue'
 
 const negocioStore = useNegocioStore()
 
@@ -20,9 +20,6 @@ const form = reactive({
   zonaHoraria: 'America/Lima',
   activo: true
 })
-
-const preferenciasPantalla = ref<Record<string, any>>({})
-const configuracionImpresion = ref<Record<string, any>>({})
 
 const isLoading = computed(() => negocioStore.isLoading)
 const error = computed(() => negocioStore.error)
@@ -47,37 +44,13 @@ async function cargarNegocio() {
       zonaHoraria: n.zonaHoraria,
       activo: n.activo
     })
-    preferenciasPantalla.value = { ...negocioStore.preferencias.value }
-    configuracionImpresion.value = { ...negocioStore.configuracionImpresion.value }
   }
-  // Set defaults if empty
-  const defaultsPref = {
-    compacto: false,
-    mostrarStock: true,
-    confirmarEliminacion: true,
-    temaOscuro: false,
-    sonidos: true
-  }
-  const defaultsPrint = {
-    anchoPapel: 80,
-    margenes: 5,
-    tamanoFuente: 12,
-    copias: 1,
-    cortarPapel: true,
-    abrirCajon: true
-  }
-  preferenciasPantalla.value = { ...defaultsPref, ...preferenciasPantalla.value }
-  configuracionImpresion.value = { ...defaultsPrint, ...configuracionImpresion.value }
 }
 
 async function guardar() {
   negocioStore.clearError()
   saved.value = false
-  const request = {
-    ...form,
-    preferenciasPantalla: JSON.stringify(preferenciasPantalla.value),
-    configuracionImpresion: JSON.stringify(configuracionImpresion.value)
-  }
+  const request = { ...form }
 
   try {
     if (isNew.value) {
@@ -104,7 +77,7 @@ onMounted(() => {
       <div>
         <p class="eyebrow">Preferencias</p>
         <h1>Configuración del Negocio</h1>
-        <p>Datos fiscales, preferencias de pantalla e impresión. Este es el registro global del sistema.</p>
+        <p>Datos fiscales y de contacto que aparecen en comprobantes y reportes. Este es el registro global del sistema.</p>
       </div>
     </div>
 
@@ -213,99 +186,6 @@ onMounted(() => {
             </span>
           </div>
         </form>
-      </section>
-
-      <!-- Preferencias de Pantalla -->
-      <section class="panel">
-        <div class="panel-header">
-          <div class="settings-title">
-            <span class="settings-icon"><Palette :size="17" /></span>
-            <div>
-              <h2>Preferencias de Pantalla</h2>
-              <p>Configuración visual de la terminal de punto de venta.</p>
-            </div>
-          </div>
-        </div>
-        <div class="settings-options">
-          <label class="settings-option">
-            <span>
-              <strong>Modo Compacto</strong>
-              <small>Reduce el espaciado para mostrar más productos en pantalla.</small>
-            </span>
-            <input type="checkbox" v-model="preferenciasPantalla.compacto" @change="preferenciasPantalla = { ...preferenciasPantalla }" />
-          </label>
-          <label class="settings-option">
-            <span>
-              <strong>Mostrar Existencias</strong>
-              <small>Muestra el stock disponible en el catálogo de productos.</small>
-            </span>
-            <input type="checkbox" v-model="preferenciasPantalla.mostrarStock" @change="preferenciasPantalla = { ...preferenciasPantalla }" />
-          </label>
-          <label class="settings-option">
-            <span>
-              <strong>Confirmar Eliminación</strong>
-              <small>Pide confirmación antes de quitar productos del carrito.</small>
-            </span>
-            <input type="checkbox" v-model="preferenciasPantalla.confirmarEliminacion" @change="preferenciasPantalla = { ...preferenciasPantalla }" />
-          </label>
-          <label class="settings-option">
-            <span>
-              <strong>Tema Oscuro</strong>
-              <small>Activa el modo oscuro en toda la interfaz.</small>
-            </span>
-            <input type="checkbox" v-model="preferenciasPantalla.temaOscuro" @change="preferenciasPantalla = { ...preferenciasPantalla }" />
-          </label>
-          <label class="settings-option">
-            <span>
-              <strong>Sonidos</strong>
-              <small>Reproduce sonidos en acciones (venta completada, error, etc.).</small>
-            </span>
-            <input type="checkbox" v-model="preferenciasPantalla.sonidos" @change="preferenciasPantalla = { ...preferenciasPantalla }" />
-          </label>
-        </div>
-      </section>
-
-      <!-- Configuración de Impresión -->
-      <section class="panel">
-        <div class="panel-header">
-          <div class="settings-title">
-            <span class="settings-icon"><Printer :size="17" /></span>
-            <div>
-              <h2>Configuración de Impresión</h2>
-              <p>Parámetros para tickets y facturas en impresoras térmicas.</p>
-            </div>
-          </div>
-        </div>
-        <div class="settings-form">
-          <div class="form-row">
-            <label class="form-field">
-              <span>Ancho de Papel (mm)</span>
-              <input v-model.number="configuracionImpresion.anchoPapel" type="number" class="field" min="58" max="216" @change="configuracionImpresion = { ...configuracionImpresion }" />
-            </label>
-            <label class="form-field">
-              <span>Márgenes (mm)</span>
-              <input v-model.number="configuracionImpresion.margenes" type="number" class="field" min="0" max="20" @change="configuracionImpresion = { ...configuracionImpresion }" />
-            </label>
-          </div>
-          <div class="form-row">
-            <label class="form-field">
-              <span>Tamaño de Fuente</span>
-              <input v-model.number="configuracionImpresion.tamanoFuente" type="number" class="field" min="8" max="18" @change="configuracionImpresion = { ...configuracionImpresion }" />
-            </label>
-            <label class="form-field">
-              <span>Copias por Defecto</span>
-              <input v-model.number="configuracionImpresion.copias" type="number" class="field" min="1" max="3" @change="configuracionImpresion = { ...configuracionImpresion }" />
-            </label>
-          </div>
-          <label class="form-field checkbox-field">
-            <input type="checkbox" v-model="configuracionImpresion.cortarPapel" @change="configuracionImpresion = { ...configuracionImpresion }" />
-            <span>Cortar papel automáticamente</span>
-          </label>
-          <label class="form-field checkbox-field">
-            <input type="checkbox" v-model="configuracionImpresion.abrirCajon" @change="configuracionImpresion = { ...configuracionImpresion }" />
-            <span>Abrir cajón de dinero al imprimir</span>
-          </label>
-        </div>
       </section>
     </div>
   </section>
@@ -503,58 +383,6 @@ small {
   align-items: center;
   gap: 6px;
   font-weight: 600;
-}
-
-.settings-options {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.settings-option {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 14px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.settings-option:hover {
-  border-color: var(--accent);
-  background: var(--accent-subtle);
-}
-
-.settings-option span {
-  flex: 1;
-  min-width: 0;
-}
-
-.settings-option strong {
-  display: block;
-  font-size: 12px;
-  color: var(--fg);
-  font-weight: 600;
-}
-
-.settings-option small {
-  display: block;
-  margin-top: 2px;
-  font-size: 10px;
-  color: var(--muted);
-  line-height: 1.4;
-}
-
-.settings-option input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
-  accent-color: var(--accent);
-  flex-shrink: 0;
 }
 
 .alert-box {

@@ -1,6 +1,7 @@
 .pos-layout { background: var(--canvas); }
 .pos-sidebar { width: 232px; padding: 18px 12px 14px; border-right: 1px solid var(--line); background: #fff; color: var(--ink); box-shadow: 2px 0 8px rgba(30, 53, 88, .025); }
 .pos-brand { gap: 10px; padding: 4px 10px 24px; }
+.pos-brand-logo { width: 36px; height: 36px; border-radius: 9px; object-fit: contain; }
 .pos-brand-mark { width: 36px; height: 36px; border-radius: 9px; background: var(--accent); color: #fff; }
 .pos-brand strong { color: #182842; font-size: 14px; }
 .pos-brand small { color: #8996a9; }

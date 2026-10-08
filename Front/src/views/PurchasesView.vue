@@ -26,8 +26,9 @@ const error = ref('')
 const notice = ref('')
 
 const subtotal = computed(() => lines.value.reduce((sum, line) => sum + line.product.precioCompra * line.quantity, 0))
-const tax = computed(() => subtotal.value * 0.15)
-const total = computed(() => subtotal.value + tax.value)
+// Los precios ya incluyen IVA 15%. El impuesto es la parte del subtotal que corresponde al IVA.
+const tax = computed(() => Math.round(subtotal.value * 0.15 / 1.15 * 100) / 100)
+const total = computed(() => subtotal.value)
 const currency = (amount: number) => new Intl.NumberFormat('es-HN', { style: 'currency', currency: 'HNL' }).format(amount)
 const shortDate = (value: string) => new Intl.DateTimeFormat('es-HN', { dateStyle: 'medium' }).format(new Date(value))
 
@@ -142,6 +143,7 @@ onMounted(load)
               <span>Producto</span>
               <span>Cantidad</span>
               <span>Costo unitario</span>
+              <span>IVA (15%)</span>
               <span>Importe</span>
               <span></span>
             </div>
@@ -159,6 +161,7 @@ onMounted(load)
                 <button aria-label="Aumentar cantidad" @click="changeQuantity(line,1)"><Plus :size="12" /></button>
               </div>
               <span>{{ currency(line.product.precioCompra) }}</span>
+              <span class="tax-cell">{{ currency(Math.round(line.product.precioCompra * 0.15 / 1.15 * 100) / 100) }}</span>
               <strong>{{ currency(line.product.precioCompra * line.quantity) }}</strong>
               <button class="table-action delete" :aria-label="`Quitar ${line.product.nombre}`" @click="changeQuantity(line,-line.quantity)">
                 <Trash2 :size="14" />
@@ -172,9 +175,9 @@ onMounted(load)
           </div>
           <div class="purchase-form-footer">
             <div class="purchase-estimate">
-              <span>Total estimado</span>
-              <strong>{{ currency(total) }}</strong>
-              <small>Incluye impuesto estimado del 15%; el API calcula el total final.</small>
+              <span>Subtotal</span>
+              <strong>{{ currency(subtotal) }}</strong>
+              <small>IVA (15%): {{ currency(tax) }} · Total: {{ currency(total) }}</small>
             </div>
             <button class="btn" :disabled="saving || !register || !providerId || !lines.length" @click="createPurchase">
               {{ saving ? 'Guardando…' : 'Registrar compra' }}

@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { ArrowLeftRight, Boxes, Building2, ClipboardList, LayoutGrid, LogOut, Menu, Settings, ShoppingCart, Tags, Users, Wallet, X, Archive, ChevronDown, ChevronUp } from '@lucide/vue'
 import { useAuthStore } from '@/Store'
+import Logo from '@/assets/logo.svg'
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
@@ -39,7 +40,7 @@ onUnmounted(() => window.removeEventListener('auth:expired', onAuthExpired))
   <div class="pos-layout">
     <button class="sidebar-scrim" :class="{ visible: mobileOpen }" aria-label="Cerrar navegación" @click="mobileOpen = false" />
     <aside class="pos-sidebar" :class="{ open: mobileOpen }">
-      <RouterLink to="/pos" class="pos-brand" @click="mobileOpen = false"><span class="pos-brand-mark">M</span><span><strong>HanPOS</strong><small>Venta rápida</small></span></RouterLink>
+      <RouterLink to="/pos" class="pos-brand" @click="mobileOpen = false"><img :src="Logo" alt="HanPOS" class="pos-brand-logo" /><span><strong>HanPOS</strong><small>Venta rápida</small></span></RouterLink>
       <p class="pos-nav-label">Menú principal</p>
       <nav class="pos-nav" aria-label="Navegación principal">
         <RouterLink v-for="item in mainNavigation" :key="item.to" :to="item.to" class="pos-nav-link" :class="{ active: isActive(item.to) }" @click="mobileOpen = false">
