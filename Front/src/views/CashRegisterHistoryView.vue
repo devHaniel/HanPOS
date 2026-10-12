@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { Eye, FileText, Package, RefreshCw, Wallet, ArrowRight, ArrowLeft } from '@lucide/vue'
+import { Eye, FileText, Package, RefreshCw, Wallet, ArrowRight, ArrowLeft, Calendar, X as XIcon, Download } from '@lucide/vue'
 import { cashRegisterService, saleService, purchaseService, productService } from '@/Service'
 import { useAuthStore } from '@/Store'
+import { usePdfExport, formatCurrencyPdf, formatDateTimePdf } from '@/composables/usePdfExport'
 import type { CashRegister } from '@/Type/CashRegister'
 import type { Sale } from '@/Type/Sale'
 import type { Purchase } from '@/Type/Purchase'
@@ -15,6 +16,10 @@ const registers = ref<CashRegister[]>([])
 const loading = ref(false)
 const error = ref('')
 const notice = ref('')
+
+// Date filter state
+const fechaDesde = ref('')
+const fechaHasta = ref('')
 
 // Selected register details
 const selectedRegister = ref<CashRegister | null>(null)
@@ -52,13 +57,61 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const result = await cashRegisterService.list({ pagina: 1, cantidad: 100 })
+    const result = await cashRegisterService.list({ 
+      pagina: 1, 
+      cantidad: 100,
+      fechaDesde: fechaDesde.value || undefined,
+      fechaHasta: fechaHasta.value || undefined
+    })
     registers.value = result.items
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : 'No se pudo cargar el historial de cajas.'
   } finally {
     loading.value = false
   }
+}
+
+const { exportToPdf } = usePdfExport()
+
+function exportCashRegistersToPdf() {
+  if (!registers.value.length) return
+  const dateRange = fechaDesde.value || fechaHasta.value
+    ? `${fechaDesde.value ? formatDateTimePdf(fechaDesde.value) : 'Inicio'} - ${fechaHasta.value ? formatDateTimePdf(fechaHasta.value) : 'Hoy'}`
+    : 'Todas las fechas'
+
+  exportToPdf({
+    title: 'Historial de Cajas',
+    subtitle: `Filtro: ${dateRange} · Total: ${registers.value.length} turnos`,
+    columns: [
+      { header: 'N°', dataKey: 'id', width: 15 },
+      { header: 'Apertura', dataKey: 'apertura', width: 35 },
+      { header: 'Cierre', dataKey: 'cierre', width: 35 },
+      { header: 'Usuario', dataKey: 'usuario', width: 25 },
+      { header: 'Fondo Inicial', dataKey: 'inicial', width: 30 },
+      { header: 'Fondo Final', dataKey: 'final', width: 30 },
+      { header: 'Estado', dataKey: 'estado', width: 20 },
+    ],
+    data: registers.value.map(r => ({
+      id: `#${r.id}`,
+      apertura: r.fechaApertura ? formatDateTimePdf(r.fechaApertura) : '—',
+      cierre: r.fechaCierre ? formatDateTimePdf(r.fechaCierre) : '—',
+      usuario: `Usuario #${r.usuarioId}`,
+      inicial: formatCurrencyPdf(r.montoInicial),
+      final: r.montoFinal === null ? '—' : formatCurrencyPdf(r.montoFinal),
+      estado: r.estaAbierta ? 'Abierta' : 'Cerrada',
+    })),
+    fileName: `cajas-${fechaDesde.value || 'todas'}-${fechaHasta.value || 'hoy'}.pdf`,
+  })
+}
+
+function clearDateFilter() {
+  fechaDesde.value = ''
+  fechaHasta.value = ''
+  load()
+}
+
+function hasDateFilter() {
+  return !!fechaDesde.value || !!fechaHasta.value
 }
 
 async function showRegisterDetails(register: CashRegister) {
@@ -205,6 +258,44 @@ onMounted(load)
     <div v-if="error" class="alert-box register-alert">{{ error }}</div>
     <div v-if="notice" class="register-notice">{{ notice }}</div>
 
+    <!-- Date Filter -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label for="fechaDesdeCaja">Desde</label>
+        <div class="date-input-wrapper">
+          <Calendar :size="16" class="date-input-icon" />
+          <input 
+            id="fechaDesdeCaja" 
+            type="date" 
+            v-model="fechaDesde" 
+            class="date-input"
+            @change="load"
+          />
+        </div>
+      </div>
+      <div class="filter-group">
+        <label for="fechaHastaCaja">Hasta</label>
+        <div class="date-input-wrapper">
+          <Calendar :size="16" class="date-input-icon" />
+          <input 
+            id="fechaHastaCaja" 
+            type="date" 
+            v-model="fechaHasta" 
+            class="date-input"
+            @change="load"
+          />
+        </div>
+      </div>
+      <button 
+        v-if="hasDateFilter()" 
+        class="btn btn-secondary btn-sm clear-filter" 
+        @click="clearDateFilter"
+        title="Limpiar filtros"
+      >
+        <XIcon :size="14" /> Limpiar
+      </button>
+    </div>
+
     <!-- Main Registers List -->
     <section v-if="!selectedRegister" class="panel">
       <div class="panel-header">
@@ -212,7 +303,10 @@ onMounted(load)
           <h2>Historial de Cajas</h2>
           <p>{{ registers.length }} turnos encontrados</p>
         </div>
-        <span class="register-history-mark"><Wallet :size="17"/></span>
+        <div class="panel-actions">
+          <button v-if="registers.length" class="btn btn-primary" @click="exportCashRegistersToPdf"><Download :size="15"/> Exportar PDF</button>
+          <span class="register-history-mark"><Wallet :size="17"/></span>
+        </div>
       </div>
       
       <div v-if="loading" class="loading-state">Cargando historial…</div>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { categoryService, clientService, productService, providerService, userService } from '@/Service'
+import { usePdfExport, formatCurrencyPdf } from '@/composables/usePdfExport'
 import type { CategoryRequest } from '@/Type/Category'
 import type { Category } from '@/Type/Category'
 import type { ClientRequest } from '@/Type/Client'
@@ -74,6 +75,38 @@ async function load() {
   } catch (cause) { error.value = cause instanceof Error ? cause.message : 'No se pudo cargar la información.' }
   finally { loading.value = false }
 }
+
+const { exportToPdf } = usePdfExport()
+
+function exportProductsToPdf() {
+  if (!rows.value.length) return
+  exportToPdf({
+    title: 'Catálogo de Productos',
+    subtitle: `Total: ${rows.value.length} productos`,
+    columns: [
+      { header: 'Código', dataKey: 'codigo', width: 25 },
+      { header: 'Producto', dataKey: 'nombre', width: 50 },
+      { header: 'Categoría', dataKey: 'categoria', width: 30 },
+      { header: 'Precio Venta', dataKey: 'precioVenta', width: 30 },
+      { header: 'Costo', dataKey: 'precioCompra', width: 30 },
+      { header: 'Stock', dataKey: 'stock', width: 20 },
+      { header: 'Mínimo', dataKey: 'stockMinimo', width: 20 },
+      { header: 'Estado', dataKey: 'activo', width: 20 },
+    ],
+    data: rows.value.map(p => ({
+      codigo: p.codigo ?? '—',
+      nombre: p.nombre ?? '—',
+      categoria: categories.value.find(c => c.id === p.categoriaId)?.nombre ?? 'Sin categoría',
+      precioVenta: formatCurrencyPdf(Number(p.precioVenta ?? 0)),
+      precioCompra: formatCurrencyPdf(Number(p.precioCompra ?? 0)),
+      stock: String(p.stock ?? 0),
+      stockMinimo: String(p.stockMinimo ?? 0),
+      activo: p.activo ? 'Activo' : 'Inactivo',
+    })),
+    fileName: 'catalogo-productos.pdf',
+  })
+}
+
 function openCreate() {
   editId.value = null
   for (const key of Object.keys(form)) delete form[key]
@@ -110,7 +143,7 @@ onMounted(load)
 <template>
   <section class="fade-up"><div class="page-heading"><div><p class="eyebrow">Administración</p><h1>{{ definition.title }}</h1><p>{{ definition.description }}</p></div><button class="btn" @click="openCreate">＋ Nuevo registro</button></div>
     <div v-if="error" class="alert-box" style="margin-bottom:12px">{{ error }}</div><div v-if="notice" class="status-pill" style="margin-bottom:12px">{{ notice }}</div>
-    <section class="panel"><div class="panel-header"><div><h2>{{ definition.title }} registrados</h2><p>{{ visibleRows.length }} registros</p></div><div class="toolbar-group"><select v-if="resource === 'products'" v-model="selectedCategoryId" class="field product-category-filter"><option :value="null">Todas las categorías</option><option v-for="category in categories" :key="category.id" :value="category.id">{{ category.nombre }}</option></select><input v-model="search" class="search-field" placeholder="Buscar en la lista"/><button class="btn btn-secondary" @click="load">Actualizar</button></div></div>
+    <section class="panel"><div class="panel-header"><div><h2>{{ definition.title }} registrados</h2><p>{{ visibleRows.length }} registros</p></div><div class="toolbar-group"><select v-if="resource === 'products'" v-model="selectedCategoryId" class="field product-category-filter"><option :value="null">Todas las categorías</option><option v-for="category in categories" :key="category.id" :value="category.id">{{ category.nombre }}</option></select><input v-model="search" class="search-field" placeholder="Buscar en la lista"/><button class="btn btn-secondary" @click="load">Actualizar</button><button v-if="resource === 'products' && visibleRows.length" class="btn btn-primary" @click="exportProductsToPdf">Exportar PDF</button></div></div>
       <div v-if="loading" class="loading-state">Cargando registros…</div><div v-else class="table-wrap"><table class="data-table"><thead><tr><th v-for="column in definition.columns" :key="column[0]">{{ column[1] }}</th><th>Acciones</th></tr></thead><tbody>
         <tr v-for="row in visibleRows" :key="row.id"><td v-for="column in definition.columns" :key="column[0]" :class="{ 'row-primary': column[0] === 'nombre' || column[0] === 'codigo' }"><span v-if="column[0] === 'activo'" class="status-pill" :class="{inactive: !row.activo}">{{ display(row,column[0]) }}</span><template v-else>{{ display(row,column[0]) }}</template></td><td><div class="table-actions"><button class="table-action" @click="openEdit(row)">Editar</button><button class="table-action delete" @click="remove(row)">Eliminar</button></div></td></tr>
       </tbody></table><div v-if="!visibleRows.length" class="empty-state">No hay registros para mostrar.</div></div>

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { CircleAlert, Eye, FileText, RefreshCw, Trash2, X } from '@lucide/vue'
+import { CircleAlert, Eye, FileText, RefreshCw, Trash2, X, Calendar, X as XIcon, Download } from '@lucide/vue'
 import { productService, saleService } from '@/Service'
 import { useAuthStore } from '@/Store'
+import { usePdfExport, formatCurrencyPdf, formatDateTimePdf } from '@/composables/usePdfExport'
 import type { PagedResult } from '@/Type/Common'
 import type { Sale, SaleDetail } from '@/Type/Sale'
 
@@ -26,6 +27,10 @@ const deleteError = ref('')
 const currency = (amount: number) => new Intl.NumberFormat('es-HN', { style: 'currency', currency: 'HNL' }).format(amount)
 const shortDate = (value: string) => new Intl.DateTimeFormat('es-HN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 
+// Date filter state
+const fechaDesde = ref('')
+const fechaHasta = ref('')
+
 function paymentMethod(method: number | null) {
   if (method === 1) return 'Efectivo'
   if (method === 2) return 'Tarjeta'
@@ -37,12 +42,60 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    result.value = await saleService.list({ pagina: 1, cantidad: 50 })
+    result.value = await saleService.list({ 
+      pagina: 1, 
+      cantidad: 50,
+      fechaDesde: fechaDesde.value || undefined,
+      fechaHasta: fechaHasta.value || undefined
+    })
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : 'No se pudieron cargar las ventas.'
   } finally {
     loading.value = false
   }
+}
+
+const { exportToPdf } = usePdfExport()
+
+function exportSalesToPdf() {
+  if (!result.value?.items.length) return
+  const dateRange = fechaDesde.value || fechaHasta.value
+    ? `${fechaDesde.value ? formatDateTimePdf(fechaDesde.value) : 'Inicio'} - ${fechaHasta.value ? formatDateTimePdf(fechaHasta.value) : 'Hoy'}`
+    : 'Todas las fechas'
+
+  exportToPdf({
+    title: 'Historial de Ventas',
+    subtitle: `Filtro: ${dateRange} · Total: ${result.value.items.length} ventas`,
+    columns: [
+      { header: 'N°', dataKey: 'id', width: 15 },
+      { header: 'Fecha y Hora', dataKey: 'fecha', width: 35 },
+      { header: 'Cliente', dataKey: 'cliente', width: 35 },
+      { header: 'Caja', dataKey: 'caja', width: 15 },
+      { header: 'Pago', dataKey: 'metodoPago', width: 25 },
+      { header: 'Estado', dataKey: 'estado', width: 20 },
+      { header: 'Total', dataKey: 'total', width: 30 },
+    ],
+    data: result.value.items.map(s => ({
+      id: `#${s.id}`,
+      fecha: formatDateTimePdf(s.fecha),
+      cliente: s.clienteId ? `Cliente #${s.clienteId}` : 'Cliente ocasional',
+      caja: `#${s.cajaId}`,
+      metodoPago: paymentMethod(s.metodoPago),
+      estado: s.estado === 2 ? 'Cancelada' : 'Completada',
+      total: formatCurrencyPdf(s.total),
+    })),
+    fileName: `ventas-${fechaDesde.value || 'todas'}-${fechaHasta.value || 'hoy'}.pdf`,
+  })
+}
+
+function clearDateFilter() {
+  fechaDesde.value = ''
+  fechaHasta.value = ''
+  load()
+}
+
+function hasDateFilter() {
+  return !!fechaDesde.value || !!fechaHasta.value
 }
 
 async function showDetails(sale: Sale) {
@@ -115,8 +168,53 @@ onMounted(load)
     </div>
     <div v-if="error" class="alert-box sales-alert" role="alert">{{ error }}</div>
     <div v-if="notice" class="register-notice">{{ notice }}</div>
+
+    <!-- Date Filter -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label for="fechaDesde">Desde</label>
+        <div class="date-input-wrapper">
+          <Calendar :size="16" class="date-input-icon" />
+          <input 
+            id="fechaDesde" 
+            type="date" 
+            v-model="fechaDesde" 
+            class="date-input"
+            @change="load"
+          />
+        </div>
+      </div>
+      <div class="filter-group">
+        <label for="fechaHasta">Hasta</label>
+        <div class="date-input-wrapper">
+          <Calendar :size="16" class="date-input-icon" />
+          <input 
+            id="fechaHasta" 
+            type="date" 
+            v-model="fechaHasta" 
+            class="date-input"
+            @change="load"
+          />
+        </div>
+      </div>
+      <button 
+        v-if="hasDateFilter()" 
+        class="btn btn-secondary btn-sm clear-filter" 
+        @click="clearDateFilter"
+        title="Limpiar filtros"
+      >
+        <XIcon :size="14" /> Limpiar
+      </button>
+    </div>
+
     <section class="panel">
-      <div class="panel-header"><div><h2>Transacciones</h2><p>{{ result?.total ?? 0 }} ventas registradas</p></div><button class="btn btn-secondary" :disabled="loading" @click="load"><RefreshCw :size="15"/> Actualizar</button></div>
+      <div class="panel-header">
+        <div><h2>Transacciones</h2><p>{{ result?.total ?? 0 }} ventas registradas</p></div>
+        <div class="panel-actions">
+          <button class="btn btn-secondary" :disabled="loading" @click="load"><RefreshCw :size="15"/> Actualizar</button>
+          <button v-if="result?.items?.length" class="btn btn-primary" @click="exportSalesToPdf"><Download :size="15"/> Exportar PDF</button>
+        </div>
+      </div>
       <div v-if="loading" class="loading-state">Cargando ventas…</div>
       <div v-else class="table-wrap"><table class="data-table"><thead><tr><th>Número</th><th>Fecha</th><th>Cliente</th><th>Caja</th><th>Pago</th><th>Estado</th><th>Total</th><th>Acciones</th></tr></thead><tbody>
         <tr v-for="sale in result?.items ?? []" :key="sale.id"><td class="row-primary">#{{ sale.id }}</td><td>{{ shortDate(sale.fecha) }}</td><td>{{ sale.clienteId ? `Cliente #${sale.clienteId}` : 'Cliente ocasional' }}</td><td>#{{ sale.cajaId }}</td><td>{{ paymentMethod(sale.metodoPago) }}</td><td><span class="status-pill" :class="{ alert: sale.estado === 2 }">{{ sale.estado === 2 ? 'Cancelada' : 'Completada' }}</span></td><td class="row-primary">{{ currency(sale.total) }}</td><td><div class="table-actions"><button class="table-action" :aria-label="`Ver venta ${sale.id}`" @click="showDetails(sale)"><Eye :size="15"/><span>Detalle</span></button><button v-if="auth.isAdmin" class="table-action delete" :aria-label="`Eliminar venta ${sale.id}`" :disabled="deletingId === sale.id" @click="requestDelete(sale)"><Trash2 :size="14"/><span>Eliminar</span></button></div></td></tr>
