@@ -8,7 +8,12 @@ const crud = createCrudService<Purchase, PurchaseRequest, PurchaseUpdateRequest>
 export const purchaseService = {
   ...crud,
   list(query?: PurchaseQuery) {
-    return apiClient.get<PagedResult<Purchase>>('/compra', query)
+    const params = new URLSearchParams()
+    if (query?.pagina) params.set('pagina', String(query.pagina))
+    if (query?.cantidad) params.set('cantidad', String(query.cantidad))
+    if (query?.fechaDesde) params.set('fechaDesde', query.fechaDesde)
+    if (query?.fechaHasta) params.set('fechaHasta', query.fechaHasta)
+    return apiClient.get<PagedResult<Purchase>>(`/compra?${params.toString()}`)
   },
   getByDate(date: string) {
     return apiClient.get<Purchase[]>(`/compra/por-fecha/${encodeURIComponent(date)}`)

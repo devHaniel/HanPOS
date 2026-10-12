@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { DollarSign, CreditCard, Banknote, Package, Calculator, AlertTriangle, Wallet } from '@lucide/vue'
+import { DollarSign, CreditCard, Banknote, Package, Calculator, AlertTriangle, Wallet, CheckCircle, AlertCircle, ArrowRight, Store, ShoppingCart } from '@lucide/vue'
 import { saleService, purchaseService, cashRegisterService } from '@/Service'
 import { useProductStore } from '@/Store'
+import { useCategoryStore } from '@/Store/CategoryStore'
+import { useNegocioStore } from '@/Store'
 import type { Sale } from '@/Type/Sale'
 import type { Purchase } from '@/Type/Purchase'
 import type { CashRegister } from '@/Type/CashRegister'
 
 const products = useProductStore()
+const categories = useCategoryStore()
+const negocioStore = useNegocioStore()
 const recentSales = ref<Sale[]>([])
 const recentPurchases = ref<Purchase[]>([])
 const currentRegister = ref<CashRegister | null>(null)
@@ -73,6 +77,45 @@ const netCash = computed(() => todaySalesByMethod.value.efectivo - todayPurchase
 
 const isRegisterOpen = computed(() => currentRegister.value !== null)
 
+// Setup checklist
+const setupChecklist = computed(() => [
+  { 
+    id: 'negocio', 
+    label: 'Datos del negocio', 
+    done: !!negocioStore.negocio, 
+    icon: Store,
+    action: '/settings',
+    actionLabel: 'Configurar'
+  },
+  { 
+    id: 'categorias', 
+    label: 'Categorías creadas', 
+    done: categories.items.length > 0, 
+    icon: Package,
+    action: '/categories',
+    actionLabel: 'Agregar'
+  },
+  { 
+    id: 'productos', 
+    label: 'Productos en catálogo', 
+    done: products.items.length > 0, 
+    icon: ShoppingCart,
+    action: '/products',
+    actionLabel: 'Agregar'
+  },
+  { 
+    id: 'caja', 
+    label: 'Caja abierta', 
+    done: isRegisterOpen.value, 
+    icon: Wallet,
+    action: '/cash-register',
+    actionLabel: 'Abrir caja'
+  },
+])
+
+const setupComplete = computed(() => setupChecklist.value.every(item => item.done))
+const setupProgress = computed(() => setupChecklist.value.filter(item => item.done).length)
+
 async function load() {
   loading.value = true
   loadError.value = ''
@@ -83,6 +126,7 @@ async function load() {
     
     const results = await Promise.allSettled([
       products.fetchAll({ pagina: 1, cantidad: 10 }),
+      categories.fetchAll({ pagina: 1, cantidad: 100 }),
       saleService.getByDate(todayStr),
       purchaseService.getByDate(todayStr),
       cashRegisterService.getOpen(),
@@ -90,11 +134,11 @@ async function load() {
       purchaseService.list({ pagina: 1, cantidad: 5 }),
     ])
     
-    if (results[1].status === 'fulfilled') todaySales.value = results[1].value
-    if (results[2].status === 'fulfilled') todayPurchases.value = results[2].value
-    if (results[3].status === 'fulfilled') currentRegister.value = results[3].value
-    if (results[4].status === 'fulfilled') recentSales.value = results[4].value.items
-    if (results[5].status === 'fulfilled') recentPurchases.value = results[5].value.items
+    if (results[2].status === 'fulfilled') todaySales.value = results[2].value
+    if (results[3].status === 'fulfilled') todayPurchases.value = results[3].value
+    if (results[4].status === 'fulfilled') currentRegister.value = results[4].value
+    if (results[5].status === 'fulfilled') recentSales.value = results[5].value.items
+    if (results[6].status === 'fulfilled') recentPurchases.value = results[6].value.items
     
     if (results.some(r => r.status === 'rejected')) {
       loadError.value = 'Algunos datos no se pudieron cargar.'
@@ -119,8 +163,6 @@ onMounted(load)
       </div>
       <RouterLink class="btn" to="/pos">Nueva venta <span aria-hidden="true">→</span></RouterLink>
     </div>
-    
-    <div v-if="loadError" class="alert-box" style="margin-bottom: 16px">{{ loadError }}</div>
 
     <!-- DAILY SUMMARY CARDS -->
     <div class="metric-grid">
@@ -248,3 +290,159 @@ onMounted(load)
     </div>
   </section>
 </template>
+
+<style scoped>
+.setup-checklist-panel {
+  margin-bottom: 24px;
+}
+
+.setup-checklist-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 16px 20px;
+  background: var(--color-accent-subtle);
+  border: 1px solid var(--color-accent);
+  border-radius: 12px;
+}
+
+.setup-progress {
+  flex: 1;
+  min-width: 0;
+}
+
+.setup-progress-bar {
+  height: 8px;
+  background: var(--color-surface);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.setup-progress-fill {
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.setup-progress-text {
+  font-size: 12px;
+  color: var(--color-muted);
+  font-weight: 600;
+}
+
+.setup-checklist-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-fg);
+  white-space: nowrap;
+}
+
+.setup-checklist-header p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.setup-checklist-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.setup-checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.setup-checklist-item:hover {
+  border-color: var(--color-accent);
+}
+
+.setup-checklist-item.done {
+  border-color: var(--color-success);
+  background: var(--color-success-bg);
+}
+
+.item-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: var(--color-surface-hover);
+  border: 1px solid var(--color-border);
+  color: var(--color-muted);
+  transition: all 0.2s;
+}
+
+.setup-checklist-item.done .item-icon {
+  background: var(--color-success);
+  border-color: var(--color-success);
+  color: white;
+}
+
+.item-icon svg {
+  stroke-width: 2;
+}
+
+.item-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.item-content strong {
+  font-size: 14px;
+  color: var(--color-fg);
+}
+
+.item-status {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.item-status.done {
+  color: var(--color-success);
+}
+
+.item-status.pending {
+  color: var(--color-warning);
+}
+
+.item-done-badge {
+  flex-shrink: 0;
+}
+
+.btn-sm {
+  min-height: 34px;
+  padding: 6px 12px;
+  font-size: 11px;
+}
+
+@media (max-width: 640px) {
+  .setup-checklist-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .setup-checklist-header h2 {
+    white-space: normal;
+  }
+}
+</style>

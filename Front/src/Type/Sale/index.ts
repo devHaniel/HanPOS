@@ -52,4 +52,7 @@ export interface SaleUpdateRequest {
   detalles?: SaleDetailUpdateRequest[] | null
 }
 
-export interface SaleQuery extends PageQuery {}
+export interface SaleQuery extends PageQuery {
+  fechaDesde?: string
+  fechaHasta?: string
+}

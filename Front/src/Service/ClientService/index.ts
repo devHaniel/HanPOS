@@ -10,6 +10,13 @@ export const clientService = {
   list() {
     return apiClient.get<Client[]>('/cliente')
   },
+  search(termino: string | undefined, pagina = 1, cantidad = 20) {
+    return apiClient.get<{ items: Client[]; total: number }>('/cliente/buscar', {
+      termino,
+      pagina,
+      cantidad
+    })
+  },
   getByRtn(rtn: string) {
     return apiClient.get<Client>(`/cliente/rtn/${encodeURIComponent(rtn)}`)
   },

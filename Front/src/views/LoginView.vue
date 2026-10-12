@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Eye, EyeOff, LockKeyhole, Store } from '@lucide/vue'
+import { Eye, EyeOff, LockKeyhole, Store, FileText, Cookie } from '@lucide/vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/Store'
 import Logo from '@/assets/logo.svg'
@@ -32,6 +32,43 @@ async function submit() {
         <div v-if="recoveryNotice" class="login-recovery-note">Solicita el restablecimiento al administrador de tu tienda.</div>
         <div v-if="auth.error" class="alert-box">{{ auth.error }}</div><button class="btn login-submit" type="submit" :disabled="auth.isLoading">{{ auth.isLoading ? 'Validando…' : 'Entrar' }}</button>
       </form>
+      <div class="login-legal-links">
+        <RouterLink to="/terminos"><FileText :size="14" /> Términos y Condiciones</RouterLink>
+        <span class="legal-separator">·</span>
+        <RouterLink to="/cookies"><Cookie :size="14" /> Política de Privacidad y Cookies</RouterLink>
+      </div>
     </section>
   </main>
 </template>
+
+<style scoped>
+.login-legal-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.login-legal-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.login-legal-links a:hover {
+  color: var(--color-accent);
+}
+
+.legal-separator {
+  color: var(--color-border);
+  font-weight: 300;
+}
+</style>

@@ -25,4 +25,7 @@ export interface CashRegisterUpdateRequest {
   usuarioId: number
 }
 
-export interface CashRegisterQuery extends PageQuery {}
+export interface CashRegisterQuery extends PageQuery {
+  fechaDesde?: string
+  fechaHasta?: string
+}

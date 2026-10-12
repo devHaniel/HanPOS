@@ -1,18 +1,22 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { ArrowRight, Banknote, Check, CreditCard, Minus, Package, Plus, Search, ShoppingCart, Tag, Trash2, UserRound, X, Printer } from '@lucide/vue'
+import { computed, onMounted, ref, nextTick } from 'vue'
+import { ArrowRight, Banknote, Check, CreditCard, Minus, Package, Plus, Search, ShoppingCart, Tag, Trash2, UserRound, X, Printer, ArrowLeftRight, Loader2, UserPlus, Save } from '@lucide/vue'
 import { cashRegisterService, categoryService, clientService, saleService } from '@/Service'
 import { useAuthStore, useProductStore } from '@/Store'
 import type { CashRegister } from '@/Type/CashRegister'
 import type { Category } from '@/Type/Category'
 import type { Client } from '@/Type/Client'
 import type { Product } from '@/Type/Product'
+import { generatePrintReceiptHTML, printReceiptViaIframe } from '@/utils/printReceipt'
+import { useKeyboardShortcuts, createPosShortcuts } from '@/composables/useKeyboardShortcuts'
+import { useRouter } from 'vue-router'
+import { useToast } from '@/composables/useToast'
 
 interface CartEntry { product: Product; quantity: number }
-type CheckoutStep = 'summary' | 'payment' | 'success' | null
 
 const auth = useAuthStore()
 const productStore = useProductStore()
+
 const products = ref<Product[]>([])
 const categories = ref<Category[]>([])
 const clients = ref<Client[]>([])
@@ -23,7 +27,6 @@ const selectedCategoryId = ref<number | null>(null)
 const selectedClientId = ref<number | null>(null)
 const paymentMethod = ref<1 | 2 | 3>(1)
 const cashReceived = ref(0)
-const checkoutStep = ref<CheckoutStep>(null)
 const lastSale = ref<{
   id: number
   total: number
@@ -38,6 +41,33 @@ const lastSale = ref<{
 const busy = ref(false)
 const error = ref('')
 const notice = ref('')
+const showSuccess = ref(false)
+
+const { success: toastSuccess, error: toastError, loading: toastLoading, info: toastInfo } = useToast()
+
+// Keyboard shortcuts
+const router = useRouter()
+
+const shortcuts = createPosShortcuts({
+  newSale: () => { if (!cart.value.length && register.value) newSale() },
+  searchProducts: () => { (document.querySelector('.sale-search-wrap input') as HTMLInputElement)?.focus() },
+  completeSale: () => { if (cart.value.length && register.value) completeSale() },
+  printReceipt: () => { if (lastSale.value) printReceipt() },
+  newPurchase: () => { router.push('/purchases') },
+  showHelp: () => { toastInfo('Ayuda', 'F2: Nueva venta | F5: Buscar productos | Ctrl+Enter: Cobrar | Ctrl+P: Imprimir') }
+})
+useKeyboardShortcuts(shortcuts)
+
+// Quick client creation modal state
+const showCreateClientModal = ref(false)
+const createClientForm = ref({
+  nombre: '',
+  telefono: '',
+  email: '',
+  rtn: ''
+})
+const createClientLoading = ref(false)
+const createClientError = ref('')
 
 const filteredProducts = computed(() => products.value.filter((product) => {
   const matchesSearch = `${product.nombre} ${product.codigo}`.toLowerCase().includes(search.value.toLowerCase().trim())
@@ -46,7 +76,6 @@ const filteredProducts = computed(() => products.value.filter((product) => {
 }))
 const itemCount = computed(() => cart.value.reduce((sum, entry) => sum + entry.quantity, 0))
 const subtotal = computed(() => cart.value.reduce((sum, entry) => sum + entry.product.precioVenta * entry.quantity, 0))
-// Los precios ya incluyen IVA 15%. El impuesto es la parte del subtotal que corresponde al IVA.
 const tax = computed(() => Math.round(subtotal.value * 0.15 / 1.15 * 100) / 100)
 const discount = computed(() => 0)
 const total = computed(() => subtotal.value)
@@ -72,16 +101,6 @@ function changeQuantity(line: CartEntry, amount: number) {
   const quantity = line.quantity + amount
   if (quantity <= 0) cart.value = cart.value.filter((entry) => entry !== line)
   else if (quantity <= line.product.stock) line.quantity = quantity
-}
-
-function beginCheckout() {
-  if (!register.value) {
-    error.value = 'Abre una caja para comenzar a vender.'
-    return
-  }
-  if (!cart.value.length) return
-  checkoutStep.value = 'summary'
-  error.value = ''
 }
 
 async function completeSale() {
@@ -115,7 +134,7 @@ async function completeSale() {
       tax: tax.value
     }
     
-    checkoutStep.value = 'success'
+    showSuccess.value = true
     await load()
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : 'No se pudo completar la venta.'
@@ -131,14 +150,54 @@ function newSale() {
   search.value = ''
   cashReceived.value = 0
   paymentMethod.value = 1
-  checkoutStep.value = null
   lastSale.value = null
+  showSuccess.value = false
+  error.value = ''
+  notice.value = ''
+}
+
+function openCreateClientModal(searchTerm = '') {
+  createClientForm.value = {
+    nombre: searchTerm,
+    telefono: '',
+    email: '',
+    rtn: ''
+  }
+  createClientError.value = ''
+  showCreateClientModal.value = true
+  nextTick(() => {
+    const input = document.querySelector('#create-client-name') as HTMLInputElement
+    input?.focus()
+  })
+}
+
+function closeCreateClientModal() {
+  showCreateClientModal.value = false
+}
+
+async function createClientQuick() {
+  if (!createClientForm.value.nombre.trim()) {
+    createClientError.value = 'El nombre es obligatorio'
+    return
+  }
+  createClientLoading.value = true
+  createClientError.value = ''
+  try {
+    const newClient = await clientService.create(createClientForm.value)
+    clients.value.unshift(newClient)
+    selectedClientId.value = newClient.id
+    closeCreateClientModal()
+  } catch (cause) {
+    createClientError.value = cause instanceof Error ? cause.message : 'No se pudo crear el cliente'
+  } finally {
+    createClientLoading.value = false
+  }
 }
 
 function generateReceipt(): string {
   if (!lastSale.value) return ''
   
-  const W = 42 // thermal width in characters
+  const W = 42
   const sale = lastSale.value
   const nl = '\n'
   const hr = '='.repeat(W)
@@ -152,36 +211,30 @@ function generateReceipt(): string {
   
   let out = ''
   
-  // Header
   out += center('HANPOS') + nl
   out += center('Sistema de Ventas') + nl
   out += hr + nl
   out += center('TICKET DE VENTA') + nl
   out += hr + nl
   
-  // Info
-  out += left(`Venta #${sale.id.toString().padStart(6, '0')}`) + nl
-  out += left(`Fecha: ${sale.date}`) + nl
-  out += left(`Cajero: ${auth.user?.nombre || 'Usuario'}`) + nl
-  out += left(`Cliente: ${sale.clientName}`) + nl
+  out += left('Venta #' + sale.id.toString().padStart(6, '0')) + nl
+  out += left('Fecha: ' + sale.date) + nl
+  out += left('Cajero: ' + (auth.user?.nombre || 'Usuario')) + nl
+  out += left('Cliente: ' + sale.clientName) + nl
   out += dr + nl
   
-  // Items header
   out += left('DESCRIPCION        CANT  PRECIO  IMPORTE') + nl
   out += dr + nl
   
-  // Items
   for (const line of sale.items) {
     const name = line.product.nombre.substring(0, 18).padEnd(18)
     const qty = line.quantity.toString().padStart(4)
     const price = currency(line.product.precioVenta).padStart(7)
     const importe = currency(line.product.precioVenta * line.quantity).padStart(8)
-    out += `${name}${qty}${price}${importe}` + nl
+    out += name + qty + price + importe + nl
   }
   
   out += dr + nl
-  
-  // Totals
   out += lr('SUBTOTAL:', currency(sale.subtotal)) + nl
   out += lr('DESCUENTO:', currency(0)) + nl
   out += lr('IMPUESTO (15%):', currency(sale.tax)) + nl
@@ -189,15 +242,13 @@ function generateReceipt(): string {
   out += lr('TOTAL:', currency(sale.total)) + nl
   out += hr + nl
   
-  // Payment
-  out += left(`PAGO: ${paymentLabel}`) + nl
+  out += left('PAGO: ' + paymentLabel) + nl
   if (sale.paymentMethod === 1) {
     out += lr('RECIBIDO:', currency(sale.total + sale.change)) + nl
     out += lr('CAMBIO:', currency(sale.change)) + nl
   }
   out += hr + nl
   
-  // Footer
   out += center('¡GRACIAS POR SU COMPRA!') + nl
   out += center('Vuelva pronto') + nl
   out += hr + nl
@@ -210,53 +261,7 @@ function printReceipt() {
   if (!lastSale.value) return
   
   const receipt = generateReceipt()
-  const printWindow = window.open('', '_blank', 'width=400,height=600')
-  if (!printWindow) return
-  
-  const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <title>Ticket Venta #${lastSale.value.id}</title>
-      <style>
-        @media print {
-          @page { margin: 0; size: 80mm auto; }
-          body { margin: 0; padding: 8px; }
-          .no-print { display: none; }
-        }
-        body { 
-          font-family: 'Courier New', 'Consolas', 'Monospace', monospace; 
-          font-size: 11px; 
-          line-height: 1.3;
-          white-space: pre-wrap;
-          padding: 8px;
-          max-width: 320px;
-          margin: 0 auto;
-        }
-        .print-btn { 
-          display: block; 
-          margin: 16px auto 0; 
-          padding: 12px 24px; 
-          background: #2563eb; 
-          color: white; 
-          border: none; 
-          border-radius: 6px; 
-          font-size: 14px; 
-          cursor: pointer;
-        }
-        .print-btn:hover { background: #1d4ed8; }
-      </style>
-    </head>
-    <body onload="window.print()">
-      ${receipt}
-      <button class="print-btn no-print" onclick="window.print()">Imprimir / Guardar PDF</button>
-      <scr` + `ipt>setTimeout(() => window.close(), 10000)</scr` + `ipt>
-    </body>
-    </html>
-  `
-  printWindow.document.write(html)
-  printWindow.document.close()
+  printReceiptViaIframe(receipt, lastSale.value.id)
 }
 
 async function load() {
@@ -284,11 +289,73 @@ onMounted(load)
         <div class="sale-title-icon"><ShoppingCart :size="21" :stroke-width="1.8" /></div>
         <div><p class="sale-overline">Mostrador / Venta rápida</p><h1>Nueva venta</h1></div>
       </div>
-      <div class="sale-terminal-status"><span class="status-indicator" :class="{ offline: !register }"></span><span>{{ register ? `Caja #${register.id} abierta` : 'Caja cerrada' }}</span></div>
+      <div class="sale-terminal-status">
+        <span class="status-indicator" :class="{ offline: !register }"></span>
+        <span>{{ register ? 'Caja #' + register.id + ' abierta' : 'Caja cerrada' }}</span>
+      </div>
     </header>
 
-    <div v-if="error" class="alert-box sale-alert" role="alert">{{ error }}<button aria-label="Cerrar aviso" @click="error = ''"><X :size="15" /></button></div>
+    <div v-if="error" class="alert-box sale-alert" role="alert">
+      {{ error }}
+      <button aria-label="Cerrar aviso" @click="error = ''"><X :size="15" /></button>
+    </div>
     <div v-if="notice" class="sale-notice"><Check :size="16" />{{ notice }}</div>
+
+    <div v-if="showSuccess" class="success-toast" role="status">
+      <div class="toast-icon"><Check :size="20" stroke-width="2.5" /></div>
+      <div class="toast-content">
+        <strong>¡Venta completada!</strong>
+        <span>Venta #{{ lastSale?.id }} por {{ currency(lastSale?.total ?? 0) }}</span>
+      </div>
+      <div class="toast-actions">
+        <button class="btn btn-sm btn-secondary" @click="printReceipt"><Printer :size="14" /> Imprimir</button>
+        <button class="btn btn-sm btn-primary" @click="newSale">Nueva venta</button>
+      </div>
+      <button class="toast-close" @click="showSuccess = false"><X :size="16" /></button>
+    </div>
+
+    <div v-if="showCreateClientModal" class="dialog-backdrop" @click.self="closeCreateClientModal">
+      <section class="checkout-dialog" role="dialog" aria-modal="true" aria-labelledby="create-client-title" style="max-width: 480px;">
+        <header class="checkout-dialog-header">
+          <div>
+            <h2 id="create-client-title">Nuevo cliente rápido</h2>
+            <p>Los datos se guardarán para futuras ventas.</p>
+          </div>
+          <button class="dialog-close" aria-label="Cerrar" @click="closeCreateClientModal"><X :size="18"/></button>
+        </header>
+        <form @submit.prevent="createClientQuick">
+          <div class="modal-form">
+            <label class="form-field">
+              <span>Nombre <span class="required">*</span></span>
+              <input id="create-client-name" v-model="createClientForm.nombre" class="field" required autofocus placeholder="Nombre del cliente" />
+            </label>
+            <div class="form-row">
+              <label class="form-field">
+                <span>Teléfono</span>
+                <input v-model="createClientForm.telefono" class="field" placeholder="+504 9876 5432" />
+              </label>
+              <label class="form-field">
+                <span>Email</span>
+                <input v-model="createClientForm.email" type="email" class="field" placeholder="cliente@email.com" />
+              </label>
+            </div>
+            <label class="form-field">
+              <span>RTN</span>
+              <input v-model="createClientForm.rtn" class="field" placeholder="08011990123456" />
+            </label>
+          </div>
+          <div v-if="createClientError" class="alert-box" style="margin: 0 20px 16px;">{{ createClientError }}</div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" @click="closeCreateClientModal">Cancelar</button>
+            <button class="btn btn-primary" type="submit" :disabled="createClientLoading">
+              <Loader2 :size="16" class="animate-spin" v-if="createClientLoading" />
+              <Save :size="16" v-else />
+              <span>{{ createClientLoading ? 'Creando...' : 'Guardar cliente' }}</span>
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
 
     <div class="sales-workspace">
       <section class="catalog-area" aria-label="Catálogo de productos">
@@ -314,8 +381,21 @@ onMounted(load)
       </section>
 
       <aside class="sale-cart" aria-label="Carrito de venta">
-        <header class="sale-cart-header"><div><div class="sale-cart-title"><ShoppingCart :size="18"/><h2>Venta actual</h2></div><span class="sale-cart-subtitle">{{ itemCount }} {{ itemCount === 1 ? 'producto' : 'productos' }}</span></div><button class="cart-clear-button" :disabled="!cart.length" @click="cart = []"><Trash2 :size="15"/><span>Vaciar</span></button></header>
-        <div class="sale-cart-client"><UserRound :size="16"/><select v-model="selectedClientId" aria-label="Cliente"><option :value="null">Cliente ocasional</option><option v-for="client in clients" :key="client.id" :value="client.id">{{ client.nombre }}</option></select><span class="client-caret">⌄</span></div>
+        <header class="sale-cart-header">
+          <div>
+            <div class="sale-cart-title"><ShoppingCart :size="18"/><h2>Venta actual</h2></div>
+            <span class="sale-cart-subtitle">{{ itemCount }} {{ itemCount === 1 ? 'producto' : 'productos' }}</span>
+          </div>
+          <button class="cart-clear-button" :disabled="!cart.length" @click="cart = []"><Trash2 :size="15"/><span>Vaciar</span></button>
+        </header>
+        <div class="sale-cart-client">
+          <UserRound :size="16"/>
+          <select v-model="selectedClientId" aria-label="Cliente">
+            <option :value="null">Cliente ocasional</option>
+            <option v-for="client in clients" :key="client.id" :value="client.id">{{ client.nombre }}</option>
+          </select>
+          <span class="client-caret">⌄</span>
+        </div>
 
         <div v-if="!cart.length" class="cart-empty"><div class="cart-empty-icon"><ShoppingCart :size="25" :stroke-width="1.6" /></div><strong>Agrega productos</strong><span>Selecciona productos del catálogo para iniciar la venta.</span></div>
         <div v-else class="sale-cart-items">
@@ -331,46 +411,297 @@ onMounted(load)
           <div class="sale-total-row"><span>Descuento</span><strong>{{ currency(discount) }}</strong></div>
           <div class="sale-total-row"><span>Impuesto (15%)</span><strong>{{ currency(tax) }}</strong></div>
           <div class="sale-grand-total"><span>Total</span><strong>{{ currency(total) }}</strong></div>
-          <button class="proceed-button" :disabled="!cart.length || !register" @click="beginCheckout">Proceder al pago <ArrowRight :size="17"/></button>
-          <span class="cart-hint" v-if="!register">Abre una caja para poder cobrar.</span>
+          
+          <div v-if="cart.length" class="inline-payment-section">
+            <div class="payment-divider"></div>
+            
+            <div class="payment-methods-inline" role="radiogroup" aria-label="Método de pago">
+              <button class="payment-method-inline" :class="{ active: paymentMethod === 1 }" role="radio" :aria-checked="paymentMethod === 1" @click="paymentMethod = 1">
+                <Banknote :size="18"/>
+                <span>Efectivo</span>
+              </button>
+              <button class="payment-method-inline" :class="{ active: paymentMethod === 2 }" role="radio" :aria-checked="paymentMethod === 2" @click="paymentMethod = 2">
+                <CreditCard :size="18"/>
+                <span>Tarjeta</span>
+              </button>
+              <button class="payment-method-inline" :class="{ active: paymentMethod === 3 }" role="radio" :aria-checked="paymentMethod === 3" @click="paymentMethod = 3">
+                <ArrowLeftRight :size="18"/>
+                <span>Transferencia</span>
+              </button>
+            </div>
+
+            <div v-if="paymentMethod === 1" class="cash-payment-inline">
+              <label class="form-field cash-received-field">
+                <span>Monto recibido</span>
+                <div class="cash-input-wrap">
+                  <span class="currency-symbol">Lps</span>
+                  <input id="cash-received" v-model.number="cashReceived" class="field cash-received-input" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" autofocus @keydown.enter.prevent="completeSale" />
+                </div>
+                <div class="cash-breakdown-inline">
+                  <div><span>Total</span><b>{{ currency(total) }}</b></div>
+                  <div><span>Recibido</span><b>{{ currency(cashReceived) }}</b></div>
+                  <div class="cash-change"><span>Cambio</span><b>{{ currency(change) }}</b></div>
+                </div>
+              </label>
+            </div>
+
+            <button class="btn btn-primary btn-block checkout-button" :disabled="busy || !register || (paymentMethod === 1 && cashReceived < total)" @click="completeSale">
+              <Loader2 :size="18" class="animate-spin" v-if="busy" />
+              <span v-else>Cobrar {{ currency(total) }} <ArrowRight :size="17"/></span>
+            </button>
+            
+            <span class="cart-hint" v-if="!register">Abre una caja para poder cobrar.</span>
+          </div>
         </div>
       </aside>
     </div>
-
-    <div v-if="checkoutStep === 'summary'" class="dialog-backdrop" @click.self="checkoutStep = null">
-      <section class="checkout-dialog" role="dialog" aria-modal="true" aria-labelledby="summary-title">
-        <header class="checkout-dialog-header"><div><span class="dialog-step-label">PASO 1 DE 2</span><h2 id="summary-title">Resumen de venta</h2><p>Revisa los productos antes de continuar.</p></div><button class="dialog-close" aria-label="Cerrar" @click="checkoutStep = null"><X :size="18"/></button></header>
-        <div class="summary-items"><div v-for="line in cart" :key="line.product.id" class="summary-line"><div><strong>{{ line.product.nombre }}</strong><span>{{ line.quantity }} × {{ currency(line.product.precioVenta) }}</span></div><b>{{ currency(line.product.precioVenta * line.quantity) }}</b></div></div>
-        <div class="summary-totals"><div><span>Subtotal</span><b>{{ currency(subtotal) }}</b></div><div><span>Descuento</span><b>{{ currency(discount) }}</b></div><div><span>Impuesto (15%)</span><b>{{ currency(tax) }}</b></div><div class="summary-total"><span>Total</span><b>{{ currency(total) }}</b></div></div>
-        <footer class="checkout-dialog-actions"><button class="btn btn-secondary" @click="checkoutStep = null">Volver a la venta</button><button class="btn" @click="checkoutStep = 'payment'">Continuar al pago <ArrowRight :size="16"/></button></footer>
-      </section>
-    </div>
-
-    <div v-if="checkoutStep === 'payment'" class="dialog-backdrop" @click.self="checkoutStep = 'summary'">
-      <section class="checkout-dialog payment-dialog" role="dialog" aria-modal="true" aria-labelledby="payment-title">
-        <header class="checkout-dialog-header"><div><span class="dialog-step-label">PASO 2 DE 2</span><h2 id="payment-title">Forma de pago</h2><p>Selecciona cómo paga el cliente.</p></div><button class="dialog-close" aria-label="Volver al resumen" @click="checkoutStep = 'summary'"><X :size="18"/></button></header>
-        <div class="payment-total-card"><span>Total a cobrar</span><strong>{{ currency(total) }}</strong></div>
-        <div class="payment-methods" role="radiogroup" aria-label="Método de pago">
-          <button class="payment-method" :class="{ active: paymentMethod === 1 }" role="radio" :aria-checked="paymentMethod === 1" @click="paymentMethod = 1"><Banknote :size="20"/><span>Efectivo</span><i></i></button>
-          <button class="payment-method" :class="{ active: paymentMethod === 2 }" role="radio" :aria-checked="paymentMethod === 2" @click="paymentMethod = 2"><CreditCard :size="20"/><span>Tarjeta</span><i></i></button>
-          <button class="payment-method" :class="{ active: paymentMethod === 3 }" role="radio" :aria-checked="paymentMethod === 3" @click="paymentMethod = 3"><ArrowLeftRight :size="20"/><span>Transferencia</span><i></i></button>
-        </div>
-        <div v-if="paymentMethod === 1" class="cash-payment-fields"><label class="form-field" for="cash-received">Monto recibido<input id="cash-received" v-model.number="cashReceived" class="field cash-received-input" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" autofocus/></label><div class="cash-breakdown"><div><span>Total</span><b>{{ currency(total) }}</b></div><div><span>Recibido</span><b>{{ currency(cashReceived) }}</b></div><div class="cash-change"><span>Cambio</span><b>{{ currency(change) }}</b></div></div></div>
-        <div v-if="error" class="alert-box payment-error" role="alert">{{ error }}</div>
-        <footer class="checkout-dialog-actions"><button class="btn btn-secondary" @click="checkoutStep = 'summary'">Volver</button><button class="btn btn-success" :disabled="busy || (paymentMethod === 1 && cashReceived < total)" @click="completeSale">{{ busy ? 'Procesando…' : 'Confirmar venta' }} <Check :size="16"/></button></footer>
-      </section>
-    </div>
-
-    <div v-if="checkoutStep === 'success'" class="dialog-backdrop success-backdrop">
-      <section class="checkout-dialog success-dialog" role="dialog" aria-modal="true" aria-labelledby="success-title">
-        <div class="success-mark"><Check :size="29" :stroke-width="2.3"/></div><p class="dialog-step-label">TRANSACCIÓN REGISTRADA</p><h2 id="success-title">Venta completada</h2><p class="success-copy">El cobro se registró correctamente.</p>
-        <div class="success-total"><span>Total</span><strong>{{ currency(lastSale?.total ?? 0) }}</strong></div><div v-if="paymentMethod === 1" class="success-change"><span>Cambio</span><strong>{{ currency(lastSale?.change ?? 0) }}</strong></div>
-        <div class="success-actions">
-          <button class="btn btn-secondary" @click="printReceipt"><Printer :size="16"/> Imprimir ticket</button>
-          <button class="btn btn-success" @click="newSale">Nueva venta</button>
-        </div>
-      </section>
-    </div>
   </section>
 </template>
-+
+
+<style scoped>
+.success-toast {
+  position: fixed;
+  top: 80px;
+  right: 24px;
+  z-index: 200;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-success);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  animation: slideInRight 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  min-width: 320px;
+  max-width: 420px;
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.toast-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-success);
+  display: grid;
+  place-items: center;
+  color: white;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.toast-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast-content strong {
+  display: block;
+  font-size: 14px;
+  color: var(--color-fg);
+  margin-bottom: 2px;
+}
+
+.toast-content span {
+  display: block;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.toast-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-left: 8px;
+}
+
+.toast-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.2s;
+}
+
+.toast-close:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-fg);
+}
+
+.btn-sm {
+  min-height: 32px;
+  padding: 6px 10px;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.inline-payment-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  animation: fadeIn 0.3s ease;
+}
+
+.payment-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 0 -16px 16px;
+}
+
+.payment-methods-inline {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.payment-method-inline {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 10px;
+  border: 2px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.payment-method-inline:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: var(--color-accent-subtle);
+}
+
+.payment-method-inline.active {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: white;
+}
+
+.payment-method-inline svg {
+  stroke-width: 2;
+}
+
+.payment-method-inline span {
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.cash-payment-inline {
+  margin-bottom: 16px;
+}
+
+.cash-received-field {
+  margin-bottom: 0;
+}
+
+.cash-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.currency-symbol {
+  position: absolute;
+  left: 14px;
+  color: var(--color-muted);
+  font-weight: 600;
+  font-size: 15px;
+  pointer-events: none;
+}
+
+.cash-received-input {
+  padding-left: 42px !important;
+  font-size: 18px !important;
+  font-weight: 600;
+  text-align: center;
+  height: 52px;
+}
+
+.cash-breakdown-inline {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--color-surface-hover);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.cash-breakdown-inline > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: center;
+  flex: 1;
+}
+
+.cash-breakdown-inline span {
+  font-size: 10px;
+  color: var(--color-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.cash-breakdown-inline b {
+  font-size: 14px;
+  color: var(--color-fg);
+}
+
+.cash-breakdown-inline .cash-change b {
+  color: var(--color-success);
+  font-size: 16px;
+}
+
+.checkout-button {
+  min-height: 50px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .success-toast {
+    left: 12px;
+    right: 12px;
+    top: auto;
+    bottom: 12px;
+    min-width: auto;
+    max-width: none;
+    animation: slideUp 0.3s ease;
+  }
+  
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .payment-methods-inline {
+    flex-direction: column;
+  }
+  
+  .cash-breakdown-inline {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+</style>

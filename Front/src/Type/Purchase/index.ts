@@ -49,4 +49,7 @@ export interface PurchaseUpdateRequest {
   detalles?: PurchaseDetailUpdateRequest[] | null
 }
 
-export interface PurchaseQuery extends PageQuery {}
+export interface PurchaseQuery extends PageQuery {
+  fechaDesde?: string
+  fechaHasta?: string
+}

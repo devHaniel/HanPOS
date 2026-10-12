@@ -1,12 +1,17 @@
 .pos-layout { background: var(--canvas); }
-.pos-sidebar { width: 232px; padding: 18px 12px 14px; border-right: 1px solid var(--line); background: #fff; color: var(--ink); box-shadow: 2px 0 8px rgba(30, 53, 88, .025); }
-.pos-brand { gap: 10px; padding: 4px 10px 24px; }
+.pos-sidebar { width: 232px; padding: 18px 12px 14px; border-right: 1px solid var(--line); background: #fff; color: var(--ink); box-shadow: 2px 0 8px rgba(30, 53, 88, .025); display: flex; flex-direction: column; }
+.pos-brand { gap: 10px; padding: 4px 10px 24px; flex-shrink: 0; }
 .pos-brand-logo { width: 36px; height: 36px; border-radius: 9px; object-fit: contain; }
 .pos-brand-mark { width: 36px; height: 36px; border-radius: 9px; background: var(--accent); color: #fff; }
 .pos-brand strong { color: #182842; font-size: 14px; }
 .pos-brand small { color: #8996a9; }
 .pos-nav-label { margin: 0 11px 8px; color: #99a4b5; font-size: 9px; letter-spacing: .8px; }
-.pos-nav { gap: 3px; }
+.pos-nav { display: flex; flex-direction: column; gap: 3px; flex: 1; min-height: 0; overflow: hidden; }
+.pos-nav-scroll { overflow-y: auto; overflow-x: hidden; padding-right: 4px; margin-right: -4px; flex: 1; min-height: 0; }
+.pos-nav-scroll::-webkit-scrollbar { width: 6px; }
+.pos-nav-scroll::-webkit-scrollbar-track { background: transparent; }
+.pos-nav-scroll::-webkit-scrollbar-thumb { background: rgba(30, 53, 88, .15); border-radius: 3px; }
+.pos-nav-scroll::-webkit-scrollbar-thumb:hover { background: rgba(30, 53, 88, .25); }
 .pos-nav-link { min-height: 40px; gap: 10px; border-radius: 7px; color: #66758b; font-size: 12px; }
 .pos-nav-link:hover { background: #f5f8fd; color: #1f4fac; }
 .pos-nav-link.active { background: #edf3ff; color: #1d55c2; }

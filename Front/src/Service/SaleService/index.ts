@@ -8,7 +8,12 @@ const crud = createCrudService<Sale, SaleRequest, SaleUpdateRequest>('/venta')
 export const saleService = {
   ...crud,
   list(query?: SaleQuery) {
-    return apiClient.get<PagedResult<Sale>>('/venta', query)
+    const params = new URLSearchParams()
+    if (query?.pagina) params.set('pagina', String(query.pagina))
+    if (query?.cantidad) params.set('cantidad', String(query.cantidad))
+    if (query?.fechaDesde) params.set('fechaDesde', query.fechaDesde)
+    if (query?.fechaHasta) params.set('fechaHasta', query.fechaHasta)
+    return apiClient.get<PagedResult<Sale>>(`/venta?${params.toString()}`)
   },
   getByDate(date: string) {
     return apiClient.get<Sale[]>(`/venta/por-fecha/${encodeURIComponent(date)}`)
