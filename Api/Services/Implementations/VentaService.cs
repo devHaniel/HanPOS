@@ -39,7 +39,12 @@ namespace Api.Services.Implementations
 
         public async Task<PagedResult<VentaResponseDto>> GetAllPagedAsync(int pagina = 1, int cantidad = 10, CancellationToken cancellationToken = default)
         {
-            var (items, total) = await _ventaRepository.GetAllPagedAsync(pagina, cantidad, cancellationToken);
+            return await GetAllPagedAsync(pagina, cantidad, null, null, cancellationToken);
+        }
+
+        public async Task<PagedResult<VentaResponseDto>> GetAllPagedAsync(int pagina, int cantidad, DateTime? fechaDesde, DateTime? fechaHasta, CancellationToken cancellationToken = default)
+        {
+            var (items, total) = await _ventaRepository.GetAllPagedAsync(pagina, cantidad, fechaDesde, fechaHasta, cancellationToken);
             return new PagedResult<VentaResponseDto>
             {
                 Items = items.Select(MapToDTO).ToList(),

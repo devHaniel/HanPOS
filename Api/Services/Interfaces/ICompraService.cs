@@ -19,6 +19,9 @@ namespace Api.Services.Interfaces
         // Obtener todas las compras con paginación
         Task<PagedResult<CompraResponseDto>> GetAllPagedAsync(int pagina = 1, int cantidad = 10, CancellationToken cancellationToken = default);
 
+        // Obtener todas las compras con paginación y filtro por rango de fechas
+        Task<PagedResult<CompraResponseDto>> GetAllPagedAsync(int pagina, int cantidad, DateTime? fechaDesde, DateTime? fechaHasta, CancellationToken cancellationToken = default);
+
         // Obtener compra por ID
         Task<CompraResponseDto?> GetByIdAsync(int compraId, CancellationToken cancellationToken = default);
 

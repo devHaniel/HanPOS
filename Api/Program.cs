@@ -169,6 +169,7 @@ builder.Services.AddScoped<ICompraService, CompraService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<INegocioService, NegocioService>();
+builder.Services.AddScoped<IReporteService, ReporteService>();
 
 // Background Services
 builder.Services.AddHostedService<RefreshTokenCleanupService>();

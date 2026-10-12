@@ -32,9 +32,15 @@ namespace Api.Controllers
         public async Task<ActionResult<PagedResult<CajaResponseDto>>> GetAll(
             int pagina = 1,
             int cantidad = 10,
+            DateTime? fechaDesde = null,
+            DateTime? fechaHasta = null,
             CancellationToken cancellationToken = default)
         {
-            var result = await _cajaService.GetAllPagedAsync(pagina, cantidad, cancellationToken);
+            // Ensure DateTime has Utc kind for PostgreSQL timestamp with time zone
+            var desde = fechaDesde?.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(fechaDesde.Value, DateTimeKind.Utc) : fechaDesde?.ToUniversalTime();
+            var hasta = fechaHasta?.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(fechaHasta.Value, DateTimeKind.Utc) : fechaHasta?.ToUniversalTime();
+            
+            var result = await _cajaService.GetAllPagedAsync(pagina, cantidad, desde, hasta, cancellationToken);
             return Ok(result);
         }
 

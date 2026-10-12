@@ -22,6 +22,14 @@ namespace Api.Repositories.Interfaces
             int cantidad,
             CancellationToken cancellationToken = default);
 
+        // Obtener compras con paginación y filtro por rango de fechas
+        Task<(List<Compra> Items, int Total)> GetAllPagedAsync(
+            int pagina,
+            int cantidad,
+            DateTime? fechaDesde,
+            DateTime? fechaHasta,
+            CancellationToken cancellationToken = default);
+
         // Obtener compra por ID
         Task<Compra?> GetByIdAsync(
             int id,
@@ -31,6 +39,9 @@ namespace Api.Repositories.Interfaces
         Task<Compra?> GetWithDetailsAndProveedorAsync(
             int compraId,
             CancellationToken cancellationToken = default);
+
+        // Obtener queryable para reportes
+        IQueryable<Compra> GetQueryable();
 
         // Agregar compra
         Task<Compra> AddAsync(

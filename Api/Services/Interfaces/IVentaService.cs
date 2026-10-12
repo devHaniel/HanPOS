@@ -16,6 +16,9 @@ namespace Api.Services.Interfaces
         // Obtener todas las ventas con paginación
         Task<PagedResult<VentaResponseDto>> GetAllPagedAsync(int pagina = 1, int cantidad = 10, CancellationToken cancellationToken = default);
 
+        // Obtener todas las ventas con paginación y filtro por rango de fechas
+        Task<PagedResult<VentaResponseDto>> GetAllPagedAsync(int pagina, int cantidad, DateTime? fechaDesde, DateTime? fechaHasta, CancellationToken cancellationToken = default);
+
         // Obtener todas las ventas (sin paginación - legacy)
         Task<IReadOnlyList<VentaResponseDto>> GetAllAsync(CancellationToken cancellationToken = default);
 

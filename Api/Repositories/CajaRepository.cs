@@ -31,7 +31,30 @@ namespace Api.Repositories
             int cantidad,
             CancellationToken cancellationToken = default)
         {
+            return await GetAllPagedAsync(pagina, cantidad, null, null, cancellationToken);
+        }
+
+        public async Task<(List<Caja> Items, int Total)> GetAllPagedAsync(
+            int pagina,
+            int cantidad,
+            DateTime? fechaDesde,
+            DateTime? fechaHasta,
+            CancellationToken cancellationToken = default)
+        {
             var query = _context.Cajas.AsQueryable();
+
+            if (fechaDesde.HasValue)
+            {
+                var desde = fechaDesde.Value.Date;
+                query = query.Where(c => c.FechaApertura.Date >= desde);
+            }
+
+            if (fechaHasta.HasValue)
+            {
+                var hasta = fechaHasta.Value.Date.AddDays(1).AddTicks(-1); // End of day
+                query = query.Where(c => c.FechaApertura <= hasta);
+            }
+
             var total = await query.CountAsync(cancellationToken);
             var items = await query
                 .OrderByDescending(c => c.FechaApertura)

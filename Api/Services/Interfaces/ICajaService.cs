@@ -18,6 +18,9 @@ namespace Api.Services.Interfaces
         // Obtener todas las cajas con paginación
         Task<PagedResult<CajaResponseDto>> GetAllPagedAsync(int pagina = 1, int cantidad = 10, CancellationToken cancellationToken = default);
 
+        // Obtener todas las cajas con paginación y filtro por rango de fechas (fecha apertura)
+        Task<PagedResult<CajaResponseDto>> GetAllPagedAsync(int pagina, int cantidad, DateTime? fechaDesde, DateTime? fechaHasta, CancellationToken cancellationToken = default);
+
         // Obtener caja por ID
         Task<CajaResponseDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 

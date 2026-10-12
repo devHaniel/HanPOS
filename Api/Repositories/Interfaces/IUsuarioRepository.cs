@@ -41,6 +41,9 @@ namespace Api.Repositories.Interfaces
             string email,
             CancellationToken cancellationToken = default);
 
+        // Obtener queryable para reportes
+        IQueryable<Usuario> GetQueryable();
+
         // Agregar nuevo usuario
         Task<Usuario> AddAsync(
             Usuario usuario,

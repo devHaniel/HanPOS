@@ -82,5 +82,10 @@ namespace Api.Repositories
         {
             _context.Users.Remove(usuario);
         }
+
+        public IQueryable<Usuario> GetQueryable()
+        {
+            return _context.Users.AsQueryable();
+        }
     }
 }

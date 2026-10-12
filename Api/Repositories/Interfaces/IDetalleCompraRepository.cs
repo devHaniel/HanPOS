@@ -36,6 +36,9 @@ namespace Api.Repositories.Interfaces
             int productoId,
             CancellationToken cancellationToken = default);
 
+        // Obtener queryable para reportes
+        IQueryable<DetalleCompra> GetQueryable();
+
         // Agregar detalle de compra
         Task<DetalleCompra> AddAsync(
             DetalleCompra detalle,

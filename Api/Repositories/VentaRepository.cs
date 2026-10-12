@@ -33,10 +33,33 @@ namespace Api.Repositories
             int cantidad,
             CancellationToken cancellationToken = default)
         {
+            return await GetAllPagedAsync(pagina, cantidad, null, null, cancellationToken);
+        }
+
+        public async Task<(List<Venta> Items, int Total)> GetAllPagedAsync(
+            int pagina,
+            int cantidad,
+            DateTime? fechaDesde,
+            DateTime? fechaHasta,
+            CancellationToken cancellationToken = default)
+        {
             var query = _context.Ventas
                 .Include(v => v.Detalles)
                 .Include(v => v.Cliente)
                 .AsQueryable();
+
+            if (fechaDesde.HasValue)
+            {
+                var desde = fechaDesde.Value.Date;
+                query = query.Where(v => v.Fecha.Date >= desde);
+            }
+
+            if (fechaHasta.HasValue)
+            {
+                var hasta = fechaHasta.Value.Date.AddDays(1).AddTicks(-1); // End of day
+                query = query.Where(v => v.Fecha <= hasta);
+            }
+
             var total = await query.CountAsync(cancellationToken);
             var items = await query
                 .OrderByDescending(v => v.Fecha)
@@ -81,6 +104,14 @@ namespace Api.Repositories
             CancellationToken cancellationToken = default)
         {
             _context.Ventas.Remove(venta);
+        }
+
+        public IQueryable<Venta> GetQueryable()
+        {
+            return _context.Ventas
+                .Include(v => v.Detalles)
+                .Include(v => v.Cliente)
+                .AsQueryable();
         }
     }
 }

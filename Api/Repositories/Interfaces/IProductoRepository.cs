@@ -53,6 +53,9 @@ namespace Api.Repositories.Interfaces
             string termino,
             CancellationToken cancellationToken = default);
 
+        // Obtener queryable para reportes
+        IQueryable<Producto> GetQueryable();
+
         // Agregar producto
         Task<Producto> AddAsync(
             Producto producto,

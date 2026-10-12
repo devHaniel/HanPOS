@@ -126,5 +126,12 @@ namespace Api.Repositories
         {
             producto.Activo = false;
         }
+
+        public IQueryable<Producto> GetQueryable()
+        {
+            return _context.Productos
+                .Include(p => p.Categoria)
+                .AsQueryable();
+        }
     }
 }

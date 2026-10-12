@@ -73,5 +73,12 @@ namespace Api.Repositories
         {
             _context.DetallesVenta.Remove(detalle);
         }
+
+        public IQueryable<DetalleVenta> GetQueryable()
+        {
+            return _context.DetallesVenta
+                .Include(d => d.Producto)
+                .AsQueryable();
+        }
     }
 }

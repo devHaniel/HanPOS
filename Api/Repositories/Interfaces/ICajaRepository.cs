@@ -22,6 +22,14 @@ namespace Api.Repositories.Interfaces
             int cantidad,
             CancellationToken cancellationToken = default);
 
+        // Obtener cajas con paginación y filtro por rango de fechas (fecha apertura)
+        Task<(List<Caja> Items, int Total)> GetAllPagedAsync(
+            int pagina,
+            int cantidad,
+            DateTime? fechaDesde,
+            DateTime? fechaHasta,
+            CancellationToken cancellationToken = default);
+
         // Obtener caja por ID
         Task<Caja?> GetByIdAsync(
             int id,
